@@ -1,10 +1,12 @@
+const Attendance = require("../models/attendanceModel");
+
 class AttendanceController {
   async getAttendance(req, res) {
     try {
-      // Logic to retrieve attendance records
-      res
-        .status(200)
-        .json({ message: "Attendance records retrieved successfully." });
+      const attendances = await Attendance.find()
+        .populate("studentId")
+        .populate("courseId");
+      res.status(200).json(attendances);
     } catch (error) {
       res
         .status(500)
@@ -14,8 +16,9 @@ class AttendanceController {
 
   async postAttendance(req, res) {
     try {
-      // Logic to post new attendance data
-      res.status(201).json({ message: "Attendance data posted successfully." });
+      const newAttendance = new Attendance(req.body);
+      await newAttendance.save();
+      res.status(201).json(newAttendance);
     } catch (error) {
       res
         .status(500)
@@ -24,4 +27,4 @@ class AttendanceController {
   }
 }
 
-module.exports = AttendanceController;
+module.exports = new AttendanceController();

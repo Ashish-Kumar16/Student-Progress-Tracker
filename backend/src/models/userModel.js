@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema({
   role: {
     type: String,
     enum: ["Student", "Instructor", "Admin"], // Ensure valid enum values
-    required: true,
+    // required: true,
   },
 });
 
