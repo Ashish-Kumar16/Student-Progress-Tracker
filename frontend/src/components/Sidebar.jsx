@@ -71,7 +71,11 @@ const AppSidebar = () => {
       }}
     >
       <Toolbar>
-        <Typography variant="h6" noWrap sx={{ color: "#000" }}>
+        <Typography
+          variant="h6"
+          noWrap
+          sx={{ color: "#000", fontWeight: "bold" }} // Make title bold
+        >
           Student Tracker
         </Typography>
       </Toolbar>
@@ -79,13 +83,16 @@ const AppSidebar = () => {
       <List>
         {sidebarItems.map((item) => {
           const Icon = item.icon;
+          const isSelected =
+            location.pathname === item.to ||
+            (item.to !== "/" && location.pathname.startsWith(item.to));
           return (
             <Tooltip key={item.title} title={item.title} placement="right">
               <ListItem
                 button
                 component={Link}
                 to={item.to}
-                selected={location.pathname === item.to}
+                selected={isSelected} // Keep item selected if on that page or subpage
                 sx={{
                   "&.Mui-selected": {
                     backgroundColor: "rgba(0, 0, 0, 0.08)",
