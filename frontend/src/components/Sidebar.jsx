@@ -71,7 +71,7 @@ const AppSidebar = () => {
       }}
     >
       <Toolbar>
-        <Typography variant="h6" noWrap>
+        <Typography variant="h6" noWrap sx={{ color: "#000" }}>
           Student Tracker
         </Typography>
       </Toolbar>
