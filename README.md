@@ -1,6 +1,43 @@
-# Student Progress Tracker
+# Course Compass
 
-This is the frontend for the Course Compass application, built with [React](https://react.dev/) and [Vite](https://vitejs.dev/). It provides a modern, responsive interface for managing students, courses, assignments, grades, attendance, and reports.
+Course Compass is a full-stack student progress tracking application. It provides a modern, responsive interface for managing students, courses, assignments, grades, attendance, and reports.
+
+---
+
+## Project Structure
+
+```
+CourseCompass/
+├── backend/    # Node.js/Express REST API (MongoDB)
+│   ├── src/
+│   │   ├── app.js
+│   │   ├── config/
+│   │   ├── controllers/
+│   │   ├── middlewares/
+│   │   ├── models/
+│   │   ├── routes/
+│   │   └── utils/
+│   ├── .env
+│   ├── package.json
+│   └── README.md
+├── frontend/   # React + Vite + Material UI
+│   ├── src/
+│   │   ├── App.jsx
+│   │   ├── main.jsx
+│   │   ├── components/
+│   │   ├── context/
+│   │   ├── data/
+│   │   ├── hooks/
+│   │   ├── pages/
+│   │   ├── store/
+│   │   └── theme/
+│   ├── index.html
+│   ├── package.json
+│   └── README.md
+└── README.md   # (this file)
+```
+
+---
 
 ## Features
 
@@ -12,26 +49,7 @@ This is the frontend for the Course Compass application, built with [React](http
 - Responsive design using Material UI
 - Toast notifications for user feedback
 
-## Project Structure
-
-```
-frontend/
-├── public/                # Static assets
-├── src/
-│   ├── components/        # Reusable UI components
-│   ├── context/           # React context providers (e.g., Toast)
-│   ├── data/              # Mock data for development
-│   ├── hooks/             # Custom React hooks
-│   ├── pages/             # Top-level route pages
-│   ├── store/             # Redux slices and store setup
-│   ├── theme/             # Material UI theme customization
-│   ├── App.jsx            # Main app component
-│   ├── main.jsx           # Entry point
-│   └── index.css          # Global styles
-├── package.json           # Project dependencies and scripts
-├── vite.config.js         # Vite configuration
-└── README.md              # Project documentation
-```
+---
 
 ## Getting Started
 
@@ -39,64 +57,119 @@ frontend/
 
 - [Node.js](https://nodejs.org/) (v18 or newer recommended)
 - [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
-
-### Installation
-
-1. Install dependencies:
-
-   ```sh
-   npm install
-   # or
-   yarn install
-   ```
-
-2. Start the development server:
-
-   ```sh
-   npm run dev
-   # or
-   yarn dev
-   ```
-
-   The app will be available at [http://localhost:5173](http://localhost:5173) by default.
-
-### Build for Production
-
-```sh
-npm run build
-# or
-yarn build
-```
-
-### Linting
-
-```sh
-npm run lint
-# or
-yarn lint
-```
-
-## Environment Variables
-
-No environment variables are required for the frontend by default. If you need to connect to a custom backend, update the API URLs in the Redux slices under `src/store/slices/`.
-
-## Customization
-
-- **Theme:** Edit [`src/theme/materialTheme.js`](src/theme/materialTheme.js) to customize Material UI colors and styles.
-- **Mock Data:** Modify [`src/data/mockData.js`](src/data/mockData.js) for demo/testing purposes.
-
-## Folder Overview
-
-- **components/**: Sidebar, navigation, forms, and other UI elements.
-- **pages/**: Main app pages (Dashboard, Students, Courses, etc.).
-- **store/**: Redux Toolkit slices for state management.
-- **context/**: Toast notifications and other context providers.
-- **theme/**: Material UI theme configuration.
-
-## License
-
-This project is licensed under the MIT License.
+- [MongoDB](https://www.mongodb.com/) (local or Atlas)
 
 ---
 
-For backend setup, see [../backend/README.md](../backend/README.md).
+### 1. Backend Setup
+
+1. **Navigate to backend:**
+
+   ```sh
+   cd backend
+   ```
+
+2. **Install dependencies:**
+
+   ```sh
+   npm install
+   ```
+
+3. **Configure environment variables:**
+
+   - Copy `.env.example` to `.env` (if exists) or create a `.env` file.
+   - Add your MongoDB URI and JWT secret:
+     ```
+     MONGO_URI=your_mongodb_connection_string
+     JWT_SECRET=your_jwt_secret
+     ```
+
+4. **Start the backend server:**
+   ```sh
+   npm run dev
+   ```
+   The backend will run on [http://localhost:5000](http://localhost:5000).
+
+---
+
+### 2. Frontend Setup
+
+1. **Navigate to frontend:**
+
+   ```sh
+   cd ../frontend
+   ```
+
+2. **Install dependencies:**
+
+   ```sh
+   npm install
+   ```
+
+3. **Start the frontend dev server:**
+   ```sh
+   npm run dev
+   ```
+   The frontend will run on [http://localhost:5173](http://localhost:5173).
+
+---
+
+## API Endpoints (Backend)
+
+- **Attendance**
+
+  - `GET /api/attendance` - Get attendance records
+  - `POST /api/attendance` - Post new attendance data
+
+- **Courses**
+
+  - `GET /api/courses` - Get course details
+  - `POST /api/courses` - Create a new course
+
+- **Grades**
+
+  - `GET /api/grades` - Retrieve grade information
+  - `PUT /api/grades/:id` - Update a grade
+
+- **Students**
+
+  - `GET /api/students` - Get student details
+  - `POST /api/students` - Add a new student
+
+- **Assignments**
+
+  - `GET /api/assignments` - Get assignments
+  - `POST /api/assignments` - Create assignment
+
+- **Submissions**
+
+  - `GET /api/submissions` - Get submissions
+  - `POST /api/submissions` - Create submission
+
+- **Users**
+  - `POST /api/users/signup` - Register
+  - `POST /api/users/login` - Login
+  - `GET /api/users/me` - Get user info (auth required)
+
+---
+
+## Customization
+
+- **Frontend Theme:** Edit [`frontend/src/theme/materialTheme.js`](frontend/src/theme/materialTheme.js)
+- **Mock Data:** Edit [`frontend/src/data/mockData.js`](frontend/src/data/mockData.js) and [`backend/src/mockData.js`](backend/src/mockData.js)
+
+---
+
+## Development Scripts
+
+- **Frontend**
+
+  - `npm run dev` – Start dev server
+  - `npm run build` – Build for production
+  - `npm run lint` – Lint code
+
+- **Backend**
+  - `npm run dev` – Start backend with nodemon
+
+---
+
