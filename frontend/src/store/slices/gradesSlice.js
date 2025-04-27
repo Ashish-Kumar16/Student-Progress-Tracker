@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api/grades";
+const API_URL = "https://spt-zqd4.onrender.com/api/grades";
 
 // Async thunks for CRUD operations
 export const fetchGrades = createAsyncThunk(

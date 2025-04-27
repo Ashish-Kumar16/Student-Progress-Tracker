@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api/users";
+const API_URL = "https://spt-zqd4.onrender.com/api/users";
 
 // Utility function to handle token storage
 const setAuthToken = (token) => {

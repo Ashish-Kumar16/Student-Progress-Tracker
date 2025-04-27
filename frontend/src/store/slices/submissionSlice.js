@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
 // Configurable API URL
-const API_URL = "http://localhost:5000/api/submissions";
+const API_URL = "https://spt-zqd4.onrender.com/api/submissions";
 
 // Helper for async thunks
 const handleAsync = (type, fn) =>

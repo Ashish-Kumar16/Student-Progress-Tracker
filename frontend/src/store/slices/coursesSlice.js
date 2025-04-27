@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 
-const API_URL = "http://localhost:5000/api/courses";
+const API_URL = "https://spt-zqd4.onrender.com/api/courses";
 
 // Async thunks for API calls
 export const fetchCourses = createAsyncThunk(
