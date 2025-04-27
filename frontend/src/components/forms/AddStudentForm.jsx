@@ -1,4 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  addStudent,
+  selectLoading,
+  selectError,
+} from "@/store/slices/studentsSlice";
+import { fetchCourses, selectCourses } from "@/store/slices/coursesSlice";
 import {
   Box,
   Button,
@@ -9,16 +16,31 @@ import {
   InputLabel,
   FormControl,
   Chip,
+  CircularProgress,
 } from "@mui/material";
-import { mockCourses } from "@/data/mockData";
-import { toast } from "sonner";
+import { useToast } from "@/context/ToastContext"; // Import useToast
 
-const AddStudentForm = () => {
+const AddStudentForm = ({ onClose }) => {
+  const dispatch = useDispatch();
+  const courses = useSelector(selectCourses);
+  const loading = useSelector(selectLoading);
+  const error = useSelector(selectError);
+
+  const { showToast } = useToast(); // Use the toast context
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     courses: [],
+    attendance: 0,
+    grade: 0,
+    submissions: 0,
   });
+
+  // Fetch courses on mount
+  useEffect(() => {
+    dispatch(fetchCourses());
+  }, [dispatch]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -37,9 +59,33 @@ const AddStudentForm = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Submitting student:", formData);
-    toast.success(`Student ${formData.name} added successfully!`);
+    dispatch(
+      addStudent({
+        name: formData.name,
+        email: formData.email,
+        courses: formData.courses,
+        attendance: Number(formData.attendance),
+        grade: Number(formData.grade),
+        submissions: Number(formData.submissions),
+      }),
+    )
+      .unwrap()
+      .then(() => {
+        showToast(`Student ${formData.name} added successfully!`, "success"); // Use showToast for success
+        onClose();
+      })
+      .catch((err) => {
+        showToast(err || "Failed to add student", "error"); // Use showToast for errors
+      });
   };
+
+  if (loading && !courses.length) {
+    return <CircularProgress />;
+  }
+
+  if (error) {
+    return <Typography color="error">{error}</Typography>;
+  }
 
   return (
     <Box
@@ -93,23 +139,56 @@ const AddStudentForm = () => {
                 <Chip
                   key={id}
                   label={
-                    mockCourses.find((course) => course.id === id)?.code || id
-                  }
+                    courses.find((course) => course._id === id)?.title || id
+                  } // Use `title` instead of `code`
                 />
               ))}
             </Box>
           )}
         >
-          {mockCourses.map((course) => (
-            <MenuItem key={course.id} value={course.id}>
-              {course.name} ({course.code})
+          {courses.map((course) => (
+            <MenuItem key={course._id} value={course._id}>
+              {course.title} {/* Use `title` instead of `name` or `code` */}
             </MenuItem>
           ))}
         </Select>
       </FormControl>
 
+      <TextField
+        label="Attendance (%)"
+        id="attendance"
+        name="attendance"
+        type="number"
+        inputProps={{ min: 0, max: 100 }}
+        value={formData.attendance}
+        onChange={handleInputChange}
+        fullWidth
+      />
+
+      <TextField
+        label="Average Grade (%)"
+        id="grade"
+        name="grade"
+        type="number"
+        inputProps={{ min: 0, max: 100 }}
+        value={formData.grade}
+        onChange={handleInputChange}
+        fullWidth
+      />
+
+      <TextField
+        label="Submissions"
+        id="submissions"
+        name="submissions"
+        type="number"
+        inputProps={{ min: 0 }}
+        value={formData.submissions}
+        onChange={handleInputChange}
+        fullWidth
+      />
+
       <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
-        <Button variant="outlined" type="button">
+        <Button variant="outlined" onClick={onClose}>
           Cancel
         </Button>
         <Button variant="contained" type="submit">

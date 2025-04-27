@@ -1,36 +1,28 @@
 import { useState, useEffect } from "react";
-import { useDispatch } from "react-redux";
-import { updateCourse } from "@/store/slices/coursesSlice";
-import { mockStudents } from "@/data/mockData";
-import { toast } from "sonner";
-import {
-  Box,
-  Button,
-  Checkbox,
-  FormControlLabel,
-  Grid,
-  TextField,
-  Typography,
-} from "@mui/material";
+import { useDispatch, useSelector } from "react-redux";
+import { updateCourse, selectLoading } from "@/store/slices/coursesSlice";
+import { Box, Button, TextField, Typography, Grid } from "@mui/material";
+import { useToast } from "@/context/ToastContext"; // Import useToast
 
 const EditCourseForm = ({ course, onClose }) => {
   const dispatch = useDispatch();
+  const isLoading = useSelector(selectLoading);
+  const { showToast } = useToast(); // Use the toast context
+
   const [formData, setFormData] = useState({
-    id: "",
-    name: "",
-    code: "",
+    title: "",
     description: "",
-    students: [],
+    credits: "",
+    instructor: "",
   });
 
   useEffect(() => {
     if (course) {
       setFormData({
-        id: course.id,
-        name: course.name,
-        code: course.code,
-        description: course.description,
-        students: course.students || [], 
+        title: course.title || "",
+        description: course.description || "",
+        credits: course.credits || "",
+        instructor: course.instructor || "",
       });
     }
   }, [course]);
@@ -43,23 +35,23 @@ const EditCourseForm = ({ course, onClose }) => {
     });
   };
 
-  const handleStudentToggle = (studentId) => {
-    const updatedStudents = formData.students.includes(studentId)
-      ? formData.students.filter((id) => id !== studentId)
-      : [...formData.students, studentId];
-
-    setFormData({
-      ...formData,
-      students: updatedStudents,
-    });
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    dispatch(updateCourse(formData));
-    toast.success("Course updated successfully");
-    onClose();
+    try {
+      await dispatch(
+        updateCourse({
+          id: course._id,
+          courseData: {
+            ...formData,
+            credits: parseInt(formData.credits, 10),
+          },
+        }),
+      ).unwrap();
+      showToast("Course updated successfully!", "success"); // Use showToast for success
+      onClose();
+    } catch (error) {
+      showToast(error?.message || "Failed to update course", "error"); // Use showToast for errors
+    }
   };
 
   return (
@@ -72,25 +64,14 @@ const EditCourseForm = ({ course, onClose }) => {
 
       <Box sx={{ mb: 2 }}>
         <TextField
-          label="Course Name"
-          name="name"
-          value={formData.name}
+          label="Course Title"
+          name="title"
+          value={formData.title}
           onChange={handleInputChange}
           required
           fullWidth
           margin="normal"
-        />
-      </Box>
-
-      <Box sx={{ mb: 2 }}>
-        <TextField
-          label="Course Code"
-          name="code"
-          value={formData.code}
-          onChange={handleInputChange}
-          required
-          fullWidth
-          margin="normal"
+          disabled={isLoading}
         />
       </Box>
 
@@ -104,45 +85,50 @@ const EditCourseForm = ({ course, onClose }) => {
           rows={3}
           fullWidth
           margin="normal"
+          disabled={isLoading}
+        />
+      </Box>
+
+      <Box sx={{ mb: 2 }}>
+        <TextField
+          label="Credits"
+          name="credits"
+          type="number"
+          value={formData.credits}
+          onChange={handleInputChange}
+          required
+          fullWidth
+          margin="normal"
+          disabled={isLoading}
         />
       </Box>
 
       <Box sx={{ mb: 3 }}>
-        <Typography variant="subtitle1" gutterBottom>
-          Enrolled Students
-        </Typography>
-        <Box
-          sx={{
-            maxHeight: 200,
-            overflowY: "auto",
-            border: "1px solid #ddd",
-            borderRadius: 1,
-            p: 2,
-          }}
-        >
-          {mockStudents.map((student) => (
-            <FormControlLabel
-              key={student.id}
-              control={
-                <Checkbox
-                  checked={formData.students.includes(student.id)}
-                  onChange={() => handleStudentToggle(student.id)}
-                />
-              }
-              label={`${student.name} (${student.email})`}
-            />
-          ))}
-        </Box>
+        <TextField
+          label="Instructor"
+          name="instructor"
+          value={formData.instructor}
+          onChange={handleInputChange}
+          required
+          fullWidth
+          margin="normal"
+          disabled={isLoading}
+        />
       </Box>
 
       <Grid container justifyContent="flex-end" spacing={2}>
         <Grid item>
-          <Button variant="outlined" onClick={onClose}>
+          <Button variant="outlined" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>
         </Grid>
         <Grid item>
-          <Button type="submit" variant="contained" color="primary">
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            disabled={isLoading}
+          >
             Save Changes
           </Button>
         </Grid>

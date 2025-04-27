@@ -1,182 +1,133 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
+  TextField,
+  Button,
   Card,
   CardContent,
-  CardActions,
   Typography,
-  Button,
-  TextField,
-  Checkbox,
-  FormControlLabel,
-  Box,
   CircularProgress,
-  Alert,
 } from "@mui/material";
-import { toast } from "sonner"; // You may want to replace this with MUI's Snackbar
+import { useDispatch, useSelector } from "react-redux";
+import { login, selectLoading } from "../../store/slices/authSlice";
+import { useToast } from "@/context/ToastContext"; // Import useToast
 
 const Login = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const isLoading = useSelector(selectLoading);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    rememberMe: false,
   });
-  const [isLoading, setIsLoading] = useState(false);
+
+  const { showToast } = useToast(); // Use the toast context
 
   const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: value,
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
+  const handleSubmit = async () => {
+    if (!formData.email || !formData.password) {
+      showToast("Please fill in all fields", "error"); // Use showToast for errors
+      return;
+    }
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      if (
-        formData.email === "admin@example.com" &&
-        formData.password === "password"
-      ) {
-        toast.success("Login successful!");
-        navigate("/");
-      } else {
-        toast.error("Invalid credentials");
-      }
-    } catch {
-      toast.error("Login failed. Please try again.");
-    } finally {
-      setIsLoading(false);
+      await dispatch(
+        login({
+          email: formData.email,
+          password: formData.password,
+        }),
+      ).unwrap();
+      showToast("Logged in successfully!", "success"); // Use showToast for success
+      navigate("/");
+    } catch (error) {
+      showToast(error?.message || "Failed to log in", "error"); // Use showToast for errors
     }
   };
 
   return (
-    <Box
-      minHeight="100vh"
-      display="flex"
-      alignItems="center"
-      justifyContent="center"
-      bgcolor="#f9fafb"
-      px={2}
-      py={6}
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        minHeight: "100vh",
+        backgroundColor: "#f5f5f5",
+      }}
     >
-      <Card sx={{ width: "100%", maxWidth: 400, p: 3 }}>
+      <Card style={{ maxWidth: 400, padding: "20px" }}>
         <CardContent>
-          <Box textAlign="center" mb={3}>
-            <Typography variant="h5" fontWeight="bold">
-              Student Progress Tracker
-            </Typography>
-            <Typography variant="subtitle1" color="text.secondary" mt={1}>
-              Sign in to your account
-            </Typography>
-          </Box>
-          <form onSubmit={handleSubmit}>
-            <Box mb={2}>
-              <TextField
-                fullWidth
-                id="email"
-                name="email"
-                label="Email"
-                type="email"
-                autoComplete="email"
-                required
-                value={formData.email}
-                onChange={handleInputChange}
-                placeholder="admin@example.com"
-                variant="outlined"
-                size="small"
-              />
-            </Box>
-            <Box mb={2}>
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
-              >
-                <Typography variant="body2" fontWeight="medium">
-                  Password
-                </Typography>
-                <Button variant="text" size="small">
-                  Forgot password?
-                </Button>
-              </Box>
-              <TextField
-                fullWidth
-                id="password"
-                name="password"
-                label="Password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={formData.password}
-                onChange={handleInputChange}
-                placeholder="password"
-                variant="outlined"
-                size="small"
-                sx={{ mt: 1 }}
-              />
-            </Box>
-            <Box mb={2}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    id="rememberMe"
-                    name="rememberMe"
-                    checked={formData.rememberMe}
-                    onChange={handleInputChange}
-                    color="primary"
-                  />
-                }
-                label="Remember me"
-              />
-            </Box>
-            <Button
-              type="submit"
+          <Typography variant="h5" component="h1" align="center" gutterBottom>
+            Student Progress Tracker
+          </Typography>
+          <Typography
+            variant="subtitle1"
+            align="center"
+            color="textSecondary"
+            gutterBottom
+          >
+            Sign in to your account
+          </Typography>
+
+          <div style={{ marginTop: "20px" }}>
+            <TextField
+              label="Email"
+              name="email"
+              type="email"
               fullWidth
+              required
+              value={formData.email}
+              onChange={handleInputChange}
+              margin="normal"
+            />
+            <TextField
+              label="Password"
+              name="password"
+              type="password"
+              fullWidth
+              required
+              value={formData.password}
+              onChange={handleInputChange}
+              margin="normal"
+            />
+            <Button
+              onClick={handleSubmit}
               variant="contained"
               color="primary"
+              fullWidth
+              style={{ marginTop: "20px" }}
               disabled={isLoading}
-              sx={{ mb: 2 }}
-              startIcon={isLoading && <CircularProgress size={18} />}
             >
-              {isLoading ? "Signing in..." : "Sign in"}
+              {isLoading ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                "Sign in"
+              )}
             </Button>
-            <Box textAlign="center" mt={1}>
-              <Typography variant="body2" color="text.secondary">
-                Don't have an account?{" "}
-                <Link
-                  to="/signup"
-                  style={{ color: "#1976d2", fontWeight: 500 }}
-                >
-                  Sign up
-                </Link>
-              </Typography>
-            </Box>
-          </form>
-          <Box mt={4} textAlign="center">
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              display="block"
-              mb={1}
+          </div>
+
+          <Typography
+            variant="body2"
+            align="center"
+            style={{ marginTop: "20px" }}
+          >
+            Don't have an account?{" "}
+            <Link
+              to="/signup"
+              style={{ color: "#1976d2", textDecoration: "none" }}
             >
-              For demo purposes use:
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Email: admin@example.com
-            </Typography>
-            <br />
-            <Typography variant="caption" color="text.secondary">
-              Password: password
-            </Typography>
-          </Box>
+              Sign up
+            </Link>
+          </Typography>
         </CardContent>
       </Card>
-    </Box>
+    </div>
   );
 };
 

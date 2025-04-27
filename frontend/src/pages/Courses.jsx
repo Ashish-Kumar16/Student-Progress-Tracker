@@ -1,9 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
-  selectCourses,
-  setSelectedCourse,
+  fetchCourses,
+  fetchCourseById,
   deleteCourse,
+  selectCourses,
+  selectSelectedCourse,
+  selectLoading,
+  selectError,
 } from "../store/slices/coursesSlice";
 import { Plus, Eye, Edit, Trash2 } from "lucide-react";
 import {
@@ -16,7 +20,6 @@ import {
   Paper,
   Button,
   TextField,
-  Chip,
   Dialog,
   DialogContent,
   DialogTitle,
@@ -25,60 +28,67 @@ import {
   Box,
   Typography,
 } from "@mui/material";
-import { toast } from "sonner";
 import AddCourseForm from "../components/forms/AddCourseForm";
 import EditCourseForm from "../components/forms/EditCourseForm";
-import { mockStudents } from "@/data/mockData";
+import { useToast } from "@/context/ToastContext"; // Import useToast
 
 const Courses = () => {
   const dispatch = useDispatch();
   const courses = useSelector(selectCourses);
+  const selectedCourse = useSelector(selectSelectedCourse);
+  const loading = useSelector(selectLoading);
+  const error = useSelector(selectError);
   const [search, setSearch] = useState("");
-  const [selectedCourse, setSelectedCourseState] = useState(null);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [courseToDelete, setCourseToDelete] = useState(null);
+
+  const { showToast } = useToast(); // Use the toast context
+
+  useEffect(() => {
+    dispatch(fetchCourses());
+  }, [dispatch]);
+
+  useEffect(() => {
+    if (error) {
+      showToast(error, "error"); // Use showToast for errors
+    }
+  }, [error, showToast]);
 
   // Filter courses based on search input
   const filteredCourses = (courses || []).filter(
     (course) =>
-      course.name.toLowerCase().includes(search.toLowerCase()) ||
-      course.code.toLowerCase().includes(search.toLowerCase()),
+      course.title.toLowerCase().includes(search.toLowerCase()) ||
+      course.instructor.toLowerCase().includes(search.toLowerCase()),
   );
 
-  // Map student IDs to names using mock data
-  const getStudentsForCourse = (studentIds = []) => {
-    return studentIds.map((id) => {
-      const student = mockStudents.find((s) => s.id === id);
-      return student ? student.name : "Unknown";
-    });
-  };
-
-  // Handle course deletion
-  const handleDelete = (courseId) => {
-    dispatch(deleteCourse(courseId));
-    setIsDeleteOpen(false);
-    toast.success("Course deleted successfully");
-  };
-
   // Open dialog functions
-  const openViewDialog = (course) => {
-    setSelectedCourseState(course);
-    dispatch(setSelectedCourse(course));
+  const openViewDialog = (courseId) => {
+    dispatch(fetchCourseById(courseId));
     setIsViewOpen(true);
   };
 
-  const openEditDialog = (course) => {
-    setSelectedCourseState(course);
-    dispatch(setSelectedCourse(course));
+  const openEditDialog = (courseId) => {
+    dispatch(fetchCourseById(courseId));
     setIsEditOpen(true);
   };
 
   const openDeleteDialog = (course) => {
-    setSelectedCourseState(course);
-    dispatch(setSelectedCourse(course));
+    setCourseToDelete(course);
     setIsDeleteOpen(true);
+  };
+
+  // Handle course deletion
+  const handleDelete = async () => {
+    try {
+      await dispatch(deleteCourse(courseToDelete._id)).unwrap();
+      setIsDeleteOpen(false);
+      showToast("Course deleted successfully", "success"); // Use showToast for success
+    } catch (error) {
+      showToast(error, "error"); // Use showToast for errors
+    }
   };
 
   return (
@@ -97,6 +107,7 @@ const Courses = () => {
           variant="contained"
           startIcon={<Plus size={16} />}
           onClick={() => setIsAddOpen(true)}
+          disabled={loading}
         >
           Add Course
         </Button>
@@ -111,6 +122,7 @@ const Courses = () => {
           variant="outlined"
           size="small"
           sx={{ maxWidth: 400 }}
+          disabled={loading}
         />
       </Paper>
 
@@ -120,20 +132,19 @@ const Courses = () => {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Course Code</TableCell>
-                <TableCell>Name</TableCell>
+                <TableCell>Title</TableCell>
                 <TableCell>Description</TableCell>
-                <TableCell>Students</TableCell>
+                <TableCell>Credits</TableCell>
+                <TableCell>Instructor</TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {filteredCourses.map((course) => (
-                <TableRow key={course.id}>
+                <TableRow key={course._id}>
                   <TableCell sx={{ fontWeight: "medium" }}>
-                    {course.code}
+                    {course.title}
                   </TableCell>
-                  <TableCell>{course.name}</TableCell>
                   <TableCell
                     sx={{
                       maxWidth: 200,
@@ -144,17 +155,16 @@ const Courses = () => {
                   >
                     {course.description}
                   </TableCell>
-                  <TableCell>
-                    <Chip label={course.students?.length || 0} size="small" />{" "}
-                    enrolled
-                  </TableCell>
+                  <TableCell>{course.credits}</TableCell>
+                  <TableCell>{course.instructor}</TableCell>
                   <TableCell align="right">
                     <Button
                       variant="outlined"
                       size="small"
                       startIcon={<Eye size={16} />}
-                      onClick={() => openViewDialog(course)}
+                      onClick={() => openViewDialog(course._id)}
                       sx={{ mr: 1 }}
+                      disabled={loading}
                     >
                       View
                     </Button>
@@ -162,8 +172,9 @@ const Courses = () => {
                       variant="outlined"
                       size="small"
                       startIcon={<Edit size={16} />}
-                      onClick={() => openEditDialog(course)}
+                      onClick={() => openEditDialog(course._id)}
                       sx={{ mr: 1 }}
+                      disabled={loading}
                     >
                       Edit
                     </Button>
@@ -173,6 +184,7 @@ const Courses = () => {
                       size="small"
                       startIcon={<Trash2 size={16} />}
                       onClick={() => openDeleteDialog(course)}
+                      disabled={loading}
                     >
                       Delete
                     </Button>
@@ -213,15 +225,15 @@ const Courses = () => {
               >
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary">
-                    Course Code
+                    Title
                   </Typography>
-                  <Typography>{selectedCourse.code}</Typography>
+                  <Typography>{selectedCourse.title}</Typography>
                 </Box>
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary">
-                    Name
+                    Credits
                   </Typography>
-                  <Typography>{selectedCourse.name}</Typography>
+                  <Typography>{selectedCourse.credits}</Typography>
                 </Box>
               </Box>
               <Box>
@@ -232,26 +244,17 @@ const Courses = () => {
               </Box>
               <Box>
                 <Typography variant="subtitle2" color="text.secondary">
-                  Students Enrolled ({selectedCourse?.students?.length || 0})
+                  Instructor
                 </Typography>
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 1 }}>
-                  {getStudentsForCourse(selectedCourse?.students || []).map(
-                    (name, index) => (
-                      <Chip
-                        key={index}
-                        label={name}
-                        variant="outlined"
-                        size="small"
-                      />
-                    ),
-                  )}
-                </Box>
+                <Typography>{selectedCourse.instructor}</Typography>
               </Box>
             </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsViewOpen(false)}>Close</Button>
+          <Button onClick={() => setIsViewOpen(false)} disabled={loading}>
+            Close
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -286,21 +289,21 @@ const Courses = () => {
             Are you sure you want to delete this course? This action cannot be
             undone.
           </DialogContentText>
-          {selectedCourse && (
+          {courseToDelete && (
             <Typography>
-              You are about to delete:{" "}
-              <strong>
-                {selectedCourse.name} ({selectedCourse.code})
-              </strong>
+              You are about to delete: <strong>{courseToDelete.title}</strong>
             </Typography>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setIsDeleteOpen(false)}>Cancel</Button>
+          <Button onClick={() => setIsDeleteOpen(false)} disabled={loading}>
+            Cancel
+          </Button>
           <Button
             variant="contained"
             color="error"
-            onClick={() => handleDelete(selectedCourse.id)}
+            onClick={handleDelete}
+            disabled={loading}
           >
             Delete
           </Button>

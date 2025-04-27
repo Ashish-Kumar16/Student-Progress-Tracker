@@ -1,11 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const gradesController = require("../controllers/gradesController"); // Import the instance directly
+const gradesController = require("../controllers/gradesController");
 
-// Route to get all grades
 router.get("/", gradesController.getGrades);
-
-// Route to update a specific grade
+router.post("/", gradesController.createGrade);
+router.get("/:id", gradesController.getGradeById);
 router.put("/:id", gradesController.updateGrade);
+router.delete("/:id", gradesController.deleteGrade);
 
 module.exports = router;

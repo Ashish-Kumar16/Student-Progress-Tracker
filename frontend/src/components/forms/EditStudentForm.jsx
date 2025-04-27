@@ -1,7 +1,11 @@
 import { useState, useEffect } from "react";
-import { useDispatch } from "react-redux";
-import { updateStudent } from "@/store/slices/studentsSlice";
-import { mockCourses } from "@/data/mockData";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  updateStudent,
+  selectLoading,
+  selectError,
+} from "@/store/slices/studentsSlice";
+import { fetchCourses, selectCourses } from "@/store/slices/coursesSlice";
 import {
   Box,
   Button,
@@ -10,13 +14,20 @@ import {
   Grid,
   TextField,
   Typography,
+  CircularProgress,
 } from "@mui/material";
-import { toast } from "sonner";
+import { useToast } from "@/context/ToastContext"; // Import useToast
 
 const EditStudentForm = ({ student, onClose }) => {
   const dispatch = useDispatch();
+  const courses = useSelector(selectCourses);
+  const loading = useSelector(selectLoading);
+  const error = useSelector(selectError);
+
+  const { showToast } = useToast(); // Use the toast context
+
   const [formData, setFormData] = useState({
-    id: "",
+    _id: "",
     name: "",
     email: "",
     courses: [],
@@ -25,16 +36,23 @@ const EditStudentForm = ({ student, onClose }) => {
     submissions: 0,
   });
 
+  // Fetch courses on mount
+  useEffect(() => {
+    dispatch(fetchCourses());
+  }, [dispatch]);
+
+  // Update form data when student prop changes
   useEffect(() => {
     if (student) {
       setFormData({
-        id: student.id,
+        _id: student._id,
         name: student.name,
         email: student.email,
-        courses: student.courses,
-        attendance: student.attendance,
-        grade: student.grade,
-        submissions: student.submissions,
+        courses: student.courses.map((course) => course._id),
+        attendance: student.attendance || 0,
+        grade: student.grade || 0,
+        submissions:
+          typeof student.submissions === "number" ? student.submissions : 0,
       });
     }
   }, [student]);
@@ -63,16 +81,34 @@ const EditStudentForm = ({ student, onClose }) => {
 
     dispatch(
       updateStudent({
-        ...formData,
-        attendance: Number(formData.attendance),
-        grade: Number(formData.grade),
-        submissions: Number(formData.submissions),
+        id: formData._id,
+        studentData: {
+          name: formData.name,
+          email: formData.email,
+          courses: formData.courses,
+          attendance: Number(formData.attendance),
+          grade: Number(formData.grade),
+          submissions: Number(formData.submissions),
+        },
       }),
-    );
-
-    toast.success("Student updated successfully");
-    onClose();
+    )
+      .unwrap()
+      .then(() => {
+        showToast("Student updated successfully", "success"); // Use showToast for success
+        onClose();
+      })
+      .catch((err) => {
+        showToast(err || "Failed to update student", "error"); // Use showToast for errors
+      });
   };
+
+  if (loading && !courses.length) {
+    return <CircularProgress />;
+  }
+
+  if (error) {
+    return <Typography color="error">{error}</Typography>;
+  }
 
   return (
     <form onSubmit={handleSubmit}>
@@ -120,16 +156,16 @@ const EditStudentForm = ({ student, onClose }) => {
             gap: 2,
           }}
         >
-          {mockCourses.map((course) => (
+          {courses.map((course) => (
             <FormControlLabel
-              key={course.id}
+              key={course._id}
               control={
                 <Checkbox
-                  checked={formData.courses.includes(course.id)}
-                  onChange={() => handleCourseToggle(course.id)}
+                  checked={formData.courses.includes(course._id)}
+                  onChange={() => handleCourseToggle(course._id)}
                 />
               }
-              label={`${course.name} (${course.code})`}
+              label={course.title} // Use `title` instead of `name` or `code`
             />
           ))}
         </Box>

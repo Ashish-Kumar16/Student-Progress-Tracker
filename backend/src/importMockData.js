@@ -43,7 +43,9 @@ const importData = async () => {
     // Insert mock data
     await Course.insertMany(mockCourses); // Insert courses first
     await Student.insertMany(mockStudents); // Then insert students
-    await Assignment.insertMany(mockAssignments); // Then insert assignments
+    console.log("Inserting assignments...", mockAssignments.length);
+    await Assignment.insertMany(mockAssignments);
+    console.log("Assignments inserted");
     await Submission.insertMany(mockSubmissions); // Insert submissions
     await Attendance.insertMany(mockAttendance); // Insert attendance
     await User.insertMany(mockUsers); // Insert users

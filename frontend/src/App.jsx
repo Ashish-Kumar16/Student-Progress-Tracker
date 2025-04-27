@@ -1,12 +1,16 @@
-
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import { Provider } from 'react-redux';
-import { store } from './store';
+import { Provider } from "react-redux";
+import { store } from "./store";
+// import { TooltipProvider } from "./components/ui/tooltip";
+import { ToastProvider } from "./context/ToastContext";
+import { useMediaQuery, Box } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+import { useSelector } from "react-redux";
+import { selectIsLoggedIn } from "./store/slices/authSlice";
+import ErrorBoundary from "./hooks/ErrorBoundary";
+import axios from "axios";
 
 // Pages
 import Dashboard from "./pages/Dashboard";
@@ -23,40 +27,80 @@ import NotFound from "./pages/NotFound";
 
 // Components
 import AppSidebar from "./components/Sidebar";
+import BottomNavigation from "./components/BottomNavigation.jsx";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
+const drawerWidth = 240;
 
-const App = () => (
-  <Provider store={store}>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <SidebarProvider>
-            <div className="flex min-h-screen w-full">
-              <AppSidebar />
-              <main className="flex-1 overflow-y-auto">
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/students" element={<Students />} />
-                  <Route path="/courses" element={<Courses />} />
-                  <Route path="/attendance" element={<Attendance />} />
-                  <Route path="/assignments" element={<Assignments />} />
-                  <Route path="/grades" element={<Grades />} />
-                  <Route path="/reports" element={<Reports />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/signup" element={<Signup />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </main>
-            </div>
-          </SidebarProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </Provider>
-);
+const App = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isLoggedIn = useSelector(selectIsLoggedIn);
+  const token = localStorage.getItem("token");
+
+  // Set token in Axios headers on app initialization
+  if (token) {
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  }
+
+  const isAuthenticated = isLoggedIn || !!token;
+
+  return (
+    <Provider store={store}>
+      <QueryClientProvider client={queryClient}>
+        {/* <TooltipProvider> */}
+        <ToastProvider>
+          <BrowserRouter>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                minHeight: "100vh",
+              }}
+            >
+              {/* Show Sidebar only for authenticated users and non-mobile */}
+              {isAuthenticated && !isMobile && <AppSidebar />}
+              <Box
+                component="main"
+                sx={{
+                  flex: 1,
+                  overflowY: "auto",
+                  marginLeft:
+                    isAuthenticated && !isMobile ? `${drawerWidth}px` : 0,
+                  padding: "16px",
+                  paddingBottom: isMobile && isAuthenticated ? "64px" : "0",
+                }}
+              >
+                <ErrorBoundary>
+                  <Routes>
+                    {/* Protected Routes */}
+                    <Route element={<ProtectedRoute />}>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/students" element={<Students />} />
+                      <Route path="/courses" element={<Courses />} />
+                      <Route path="/attendance" element={<Attendance />} />
+                      <Route path="/assignments" element={<Assignments />} />
+                      <Route path="/grades" element={<Grades />} />
+                      <Route path="/reports" element={<Reports />} />
+                      <Route path="/settings" element={<Settings />} />
+                    </Route>
+                    {/* Public Routes */}
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/signup" element={<Signup />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </ErrorBoundary>
+              </Box>
+              {/* Show BottomNavigation only for authenticated users on mobile */}
+              {isAuthenticated && isMobile && <BottomNavigation />}
+            </Box>
+          </BrowserRouter>
+        </ToastProvider>
+        {/* </TooltipProvider> */}
+      </QueryClientProvider>
+    </Provider>
+  );
+};
 
 export default App;

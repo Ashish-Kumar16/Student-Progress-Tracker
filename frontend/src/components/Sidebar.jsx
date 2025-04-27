@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Users,
   Book,
@@ -8,7 +7,6 @@ import {
   FileText,
   BarChart2,
   Settings,
-  LogIn,
 } from "lucide-react";
 import {
   Drawer,
@@ -22,94 +20,44 @@ import {
   Box,
   Button,
   Tooltip,
-  BottomNavigation,
-  BottomNavigationAction,
   useMediaQuery,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
+import { useDispatch } from "react-redux";
+import { logout } from "../store/slices/authSlice";
+import { useToast } from "../context/ToastContext"; // <-- Add this import
 
 export const drawerWidth = 240;
 
 const sidebarItems = [
-  {
-    title: "Dashboard",
-    icon: BarChart2,
-    to: "/",
-  },
-  {
-    title: "Students",
-    icon: Users,
-    to: "/students",
-  },
-  {
-    title: "Courses",
-    icon: Book,
-    to: "/courses",
-  },
-  {
-    title: "Attendance",
-    icon: Calendar,
-    to: "/attendance",
-  },
-  {
-    title: "Assignments",
-    icon: FileText,
-    to: "/assignments",
-  },
-  {
-    title: "Grades",
-    icon: Award,
-    to: "/grades",
-  },
-  {
-    title: "Reports",
-    icon: BarChart2,
-    to: "/reports",
-  },
-  {
-    title: "Settings",
-    icon: Settings,
-    to: "/settings",
-  },
+  { title: "Dashboard", icon: BarChart2, to: "/" },
+  { title: "Students", icon: Users, to: "/students" },
+  { title: "Courses", icon: Book, to: "/courses" },
+  { title: "Attendance", icon: Calendar, to: "/attendance" },
+  { title: "Assignments", icon: FileText, to: "/assignments" },
+  { title: "Grades", icon: Award, to: "/grades" },
+  { title: "Reports", icon: BarChart2, to: "/reports" },
+  { title: "Settings", icon: Settings, to: "/settings" },
 ];
 
 const AppSidebar = () => {
   const location = useLocation();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md")); // Detect mobile and tablet views
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [bottomNavValue, setBottomNavValue] = useState(location.pathname);
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const toast = useToast(); // <-- Add this line
 
   if (isMobile) {
-    // Bottom Navigation for mobile and tablet views
-    return (
-      <Box
-        sx={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 1200 }}
-      >
-        <BottomNavigation
-          value={bottomNavValue}
-          onChange={(event, newValue) => setBottomNavValue(newValue)}
-          showLabels
-        >
-          {sidebarItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <BottomNavigationAction
-                key={item.title}
-                // label={item.title}
-                icon={<Icon size={20} />}
-                component={Link}
-                to={item.to}
-                value={item.to}
-              />
-            );
-          })}
-        </BottomNavigation>
-      </Box>
-    );
+    return null; // No sidebar for mobile; handled by BottomNavigation component
   }
 
-  // Drawer for desktop views
+  const handleLogout = () => {
+    dispatch(logout());
+    toast("Logged out successfully", { type: "success" }); // <-- Show toast
+    navigate("/login");
+  };
+
   return (
     <Drawer
       variant="permanent"
@@ -159,25 +107,9 @@ const AppSidebar = () => {
       <Box sx={{ flexGrow: 1 }} />
       <Divider />
       <Box sx={{ p: 2 }}>
-        {!isLoggedIn ? (
-          <Button
-            component={Link}
-            to="/login"
-            variant="contained"
-            fullWidth
-            startIcon={<LogIn size={16} />}
-          >
-            Login
-          </Button>
-        ) : (
-          <Button
-            variant="outlined"
-            fullWidth
-            onClick={() => setIsLoggedIn(false)}
-          >
-            Logout
-          </Button>
-        )}
+        <Button variant="outlined" fullWidth onClick={handleLogout}>
+          Logout
+        </Button>
       </Box>
     </Drawer>
   );

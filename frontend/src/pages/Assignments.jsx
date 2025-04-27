@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Plus,
   FileText,
@@ -30,7 +30,7 @@ import {
   TextField,
   Typography,
   IconButton,
-  Badge,
+  Chip,
   FormControl,
   InputLabel,
   Table,
@@ -39,24 +39,42 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Chip,
   InputAdornment,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
+import { useDispatch, useSelector } from "react-redux";
+import { toast } from "react-toastify"; // Import react-toastify
 import {
-  mockAssignments,
-  mockCourses,
-  mockSubmissions,
-  mockStudents,
-} from "@/data/mockData";
+  fetchAssignments,
+  deleteAssignment,
+  selectAssignments,
+  selectAssignmentsLoading,
+  selectSubmissions,
+  selectAssignmentsError,
+} from "../store/slices/assignmentsSlice";
+import {
+  fetchStudents,
+  selectStudents,
+  selectError,
+} from "../store/slices/studentsSlice";
+import {
+  fetchSubmissions,
+  createSubmission,
+} from "../store/slices/submissionSlice";
 import AddAssignmentForm from "@/components/forms/AddAssignmentForm";
-import { useDispatch } from "react-redux";
-import { toast } from "sonner";
 
 const Assignments = () => {
   const theme = useTheme();
   const dispatch = useDispatch();
 
+  // Redux state
+  const assignments = useSelector(selectAssignments);
+  const submissions = useSelector(selectSubmissions);
+  const students = useSelector(selectStudents);
+  const loading = useSelector(selectAssignmentsLoading);
+  const error = useSelector(selectAssignmentsError);
+
+  // Local state
   const [search, setSearch] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
   const [activeTab, setActiveTab] = useState("assignments");
@@ -72,6 +90,28 @@ const Assignments = () => {
   const [isAddAssignmentDialogOpen, setIsAddAssignmentDialogOpen] =
     useState(false);
 
+  // Fetch data on mount
+  useEffect(() => {
+    dispatch(fetchAssignments());
+    dispatch(fetchSubmissions());
+    dispatch(fetchStudents()); // Added to fetch students
+  }, [dispatch]);
+
+  // Handle errors
+  useEffect(() => {
+    if (error) {
+      toast.error(error.message || "An error occurred"); // Use react-toastify
+    }
+  }, [error]);
+
+  // Handle studentsSlice errors
+  const studentsError = useSelector(selectError);
+  useEffect(() => {
+    if (studentsError) {
+      toast.error(studentsError || "An error occurred while fetching students"); // Use react-toastify
+    }
+  }, [studentsError]);
+
   const handleAddAssignmentOpen = () => {
     setIsAddAssignmentDialogOpen(true);
   };
@@ -80,19 +120,26 @@ const Assignments = () => {
     setIsAddAssignmentDialogOpen(false);
   };
 
-  const filteredAssignments = mockAssignments.filter(
+  // Filter assignments based on search and course
+  const filteredAssignments = assignments.filter(
     (assignment) =>
       (selectedCourse && selectedCourse !== "all"
-        ? assignment.courseId === selectedCourse
+        ? assignment.courseId?._id === selectedCourse
         : true) &&
       assignment.title.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const handleDeleteAssignment = () => {
-    // This would remove the assignment from the database
-    toast.success("Assignment deleted successfully");
-    setSelectedAssignment(null);
-    setIsDeleteDialogOpen(false);
+  const handleDeleteAssignment = (id) => {
+    dispatch(deleteAssignment(id))
+      .unwrap()
+      .then(() => {
+        toast.success("Assignment deleted successfully"); // Use react-toastify
+        setSelectedAssignment(null);
+        setIsDeleteDialogOpen(false);
+      })
+      .catch((err) => {
+        toast.error(err.message || "Failed to delete assignment"); // Use react-toastify
+      });
   };
 
   const getStatusIcon = (status) => {
@@ -109,22 +156,22 @@ const Assignments = () => {
   };
 
   const getStudentsWhoCanSubmit = (assignmentId) => {
-    const assignment = mockAssignments.find((a) => a.id === assignmentId);
+    const assignment = assignments.find((a) => a._id === assignmentId);
     if (!assignment) return [];
 
     // Get students enrolled in the course
-    const studentsInCourse = mockStudents.filter((student) =>
-      student.courses.includes(assignment.courseId),
+    const studentsInCourse = students.filter((student) =>
+      student.courses.some((course) => course._id === assignment.courseId?._id),
     );
 
     // Get students who already submitted
-    const submittedStudentIds = mockSubmissions
-      .filter((sub) => sub.assignmentId === assignmentId)
-      .map((sub) => sub.studentId);
+    const submittedStudentIds = submissions
+      .filter((sub) => sub.assignmentId?._id === assignmentId)
+      .map((sub) => sub.studentId?._id);
 
     // Return students who haven't submitted yet
     return studentsInCourse.filter(
-      (student) => !submittedStudentIds.includes(student.id),
+      (student) => !submittedStudentIds.includes(student._id),
     );
   };
 
@@ -134,32 +181,55 @@ const Assignments = () => {
       !selectedAssignmentForSubmission ||
       !submissionText.trim()
     ) {
-      toast.error("Please fill in all fields");
+      toast.error("Please fill in all fields"); // Use react-toastify
       return;
     }
 
-    // This would create a new submission in the database
-    toast.success(
-      `Submission created for ${
-        mockStudents.find((s) => s.id === selectedStudent)?.name
-      }`,
-    );
-    setIsSubmitDialogOpen(false);
-    setSubmissionText("");
-    setSelectedStudent("");
+    const submissionData = {
+      studentId: selectedStudent,
+      assignmentId: selectedAssignmentForSubmission._id,
+      submissionDate: new Date().toISOString(),
+      status: "submitted",
+      feedback: submissionText,
+    };
+
+    dispatch(createSubmission(submissionData))
+      .unwrap()
+      .then(() => {
+        toast.success(
+          `Submission created for ${
+            students.find((s) => s._id === selectedStudent)?.name
+          }`,
+        ); // Use react-toastify
+        setIsSubmitDialogOpen(false);
+        setSubmissionText("");
+        setSelectedStudent("");
+      })
+      .catch((err) => {
+        toast.error(err.message || "Failed to create submission"); // Use react-toastify
+      });
   };
 
-  const submissions = mockSubmissions.filter(
+  const filteredSubmissions = submissions.filter(
     (submission) =>
       !selectedCourse ||
       selectedCourse === "all" ||
-      mockAssignments.find((a) => a.id === submission.assignmentId)
-        ?.courseId === selectedCourse,
+      assignments.find((a) => a._id === submission.assignmentId?._id)?.courseId
+        ?._id === selectedCourse,
   );
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
+
+  // Extract unique courses from assignments
+  const courses = [
+    ...new Set(
+      assignments
+        .filter((a) => a.courseId)
+        .map((a) => JSON.stringify(a.courseId)),
+    ),
+  ].map((c) => JSON.parse(c));
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -178,6 +248,7 @@ const Assignments = () => {
           variant="contained"
           startIcon={<Plus size={16} />}
           onClick={handleAddAssignmentOpen}
+          disabled={loading}
         >
           Add Assignment
         </Button>
@@ -227,9 +298,9 @@ const Assignments = () => {
                   label="Course"
                 >
                   <MenuItem value="all">All Courses</MenuItem>
-                  {mockCourses.map((course) => (
-                    <MenuItem key={course.id} value={course.id}>
-                      {course.name} ({course.code})
+                  {courses.map((course) => (
+                    <MenuItem key={course._id} value={course._id}>
+                      {course.title} ({course.credits} credits)
                     </MenuItem>
                   ))}
                 </Select>
@@ -258,64 +329,78 @@ const Assignments = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {filteredAssignments.map((assignment) => {
-                    const assignmentSubmissions = mockSubmissions.filter(
-                      (s) => s.assignmentId === assignment.id,
-                    );
-                    const submissionCount = assignmentSubmissions.length;
-                    const course = mockCourses.find(
-                      (c) => c.id === assignment.courseId,
-                    );
-                    const studentsInCourse = mockStudents.filter((s) =>
-                      s.courses.includes(assignment.courseId),
-                    ).length;
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center">
+                        Loading...
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredAssignments.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} align="center">
+                        No assignments found
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredAssignments.map((assignment) => {
+                      const assignmentSubmissions = submissions.filter(
+                        (s) => s.assignmentId?._id === assignment._id,
+                      );
+                      const submissionCount = assignmentSubmissions.length;
+                      const studentsInCourse = students.filter((s) =>
+                        s.courses.some(
+                          (course) => course._id === assignment.courseId?._id,
+                        ),
+                      ).length;
 
-                    return (
-                      <TableRow key={assignment.id}>
-                        <TableCell>{assignment.title}</TableCell>
-                        <TableCell>{course?.name || "Unknown"}</TableCell>
-                        <TableCell>
-                          {new Date(assignment.dueDate).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>{assignment.totalPoints}</TableCell>
-                        <TableCell>
-                          <Chip
-                            label={`${submissionCount} / ${studentsInCourse}`}
-                            variant="outlined"
-                          />
-                        </TableCell>
-                        <TableCell align="right">
-                          <IconButton
-                            color="primary"
-                            onClick={() => {
-                              setSelectedAssignment(assignment);
-                              setIsViewDialogOpen(true);
-                            }}
-                          >
-                            <Eye size={20} />
-                          </IconButton>
-                          <IconButton
-                            color="primary"
-                            onClick={() => {
-                              // Edit assignment
-                              toast.info("Edit functionality would go here");
-                            }}
-                          >
-                            <Edit size={20} />
-                          </IconButton>
-                          <IconButton
-                            color="error"
-                            onClick={() => {
-                              setSelectedAssignment(assignment);
-                              setIsDeleteDialogOpen(true);
-                            }}
-                          >
-                            <Trash2 size={20} />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                      return (
+                        <TableRow key={assignment._id}>
+                          <TableCell>{assignment.title}</TableCell>
+                          <TableCell>
+                            {assignment.courseId?.title || "Unknown"}
+                          </TableCell>
+                          <TableCell>
+                            {new Date(assignment.dueDate).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>{assignment.totalPoints}</TableCell>
+                          <TableCell>
+                            <Chip
+                              label={`${submissionCount} / ${studentsInCourse}`}
+                              variant="outlined"
+                            />
+                          </TableCell>
+                          <TableCell align="right">
+                            <IconButton
+                              color="primary"
+                              onClick={() => {
+                                setSelectedAssignment(assignment);
+                                setIsViewDialogOpen(true);
+                              }}
+                            >
+                              <Eye size={20} />
+                            </IconButton>
+                            <IconButton
+                              color="primary"
+                              onClick={() => {
+                                toast.info("Edit functionality would go here"); // Use react-toastify
+                              }}
+                            >
+                              <Edit size={20} />
+                            </IconButton>
+                            <IconButton
+                              color="error"
+                              onClick={() => {
+                                setSelectedAssignment(assignment);
+                                setIsDeleteDialogOpen(true);
+                              }}
+                            >
+                              <Trash2 size={20} />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -336,71 +421,84 @@ const Assignments = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {submissions.map((submission) => {
-                    const student = mockStudents.find(
-                      (s) => s.id === submission.studentId,
-                    );
-                    const assignment = mockAssignments.find(
-                      (a) => a.id === submission.assignmentId,
-                    );
-                    const course = assignment
-                      ? mockCourses.find((c) => c.id === assignment.courseId)
-                      : null;
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={7} align="center">
+                        Loading...
+                      </TableCell>
+                    </TableRow>
+                  ) : filteredSubmissions.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} align="center">
+                        No submissions found
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredSubmissions.map((submission) => {
+                      const student = students.find(
+                        (s) => s._id === submission.studentId?._id,
+                      );
+                      const assignment = assignments.find(
+                        (a) => a._id === submission.assignmentId?._id,
+                      );
+                      const course = assignment?.courseId;
 
-                    return (
-                      <TableRow key={submission.id}>
-                        <TableCell>{student?.name || "Unknown"}</TableCell>
-                        <TableCell>{assignment?.title || "Unknown"}</TableCell>
-                        <TableCell>{course?.name || "Unknown"}</TableCell>
-                        <TableCell>
-                          {new Date(
-                            submission.submittedDate,
-                          ).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            {getStatusIcon(submission.status)}
-                            <Typography sx={{ textTransform: "capitalize" }}>
-                              {submission.status}
-                            </Typography>
-                          </Box>
-                        </TableCell>
-                        <TableCell>
-                          {submission.grade !== null
-                            ? `${submission.grade}/${
-                                assignment?.totalPoints || 100
-                              }`
-                            : "Not graded"}
-                        </TableCell>
-                        <TableCell align="right">
-                          <IconButton
-                            color="primary"
-                            onClick={() => setSelectedSubmission(submission)}
-                          >
-                            <Eye size={20} />
-                          </IconButton>
-                          {submission.status !== "graded" && (
-                            <Button
-                              size="small"
-                              variant="contained"
-                              onClick={() => {
-                                // Grade submission
-                                toast.info("Grade dialog would open here");
+                      return (
+                        <TableRow key={submission._id}>
+                          <TableCell>{student?.name || "Unknown"}</TableCell>
+                          <TableCell>
+                            {assignment?.title || "Unknown"}
+                          </TableCell>
+                          <TableCell>{course?.title || "Unknown"}</TableCell>
+                          <TableCell>
+                            {new Date(
+                              submission.submissionDate,
+                            ).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
                               }}
                             >
-                              Grade
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                              {getStatusIcon(submission.status)}
+                              <Typography sx={{ textTransform: "capitalize" }}>
+                                {submission.status}
+                              </Typography>
+                            </Box>
+                          </TableCell>
+                          <TableCell>
+                            {submission.grade !== null
+                              ? `${submission.grade}/${
+                                  assignment?.totalPoints || 100
+                                }`
+                              : "Not graded"}
+                          </TableCell>
+                          <TableCell align="right">
+                            <IconButton
+                              color="primary"
+                              onClick={() => setSelectedSubmission(submission)}
+                            >
+                              <Eye size={20} />
+                            </IconButton>
+                            {submission.status !== "graded" && (
+                              <Button
+                                size="small"
+                                variant="contained"
+                                onClick={() => {
+                                  toast.info("Grade dialog would open here"); // Use react-toastify
+                                }}
+                              >
+                                Grade
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -433,9 +531,7 @@ const Assignments = () => {
                     Course
                   </Typography>
                   <Typography variant="body1" gutterBottom>
-                    {mockCourses.find(
-                      (c) => c.id === selectedAssignment.courseId,
-                    )?.name || "Unknown"}
+                    {selectedAssignment.courseId?.title || "Unknown"}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -459,7 +555,7 @@ const Assignments = () => {
                     Description
                   </Typography>
                   <Typography variant="body1" gutterBottom>
-                    {selectedAssignment.description}
+                    {selectedAssignment.description || "No description"}
                   </Typography>
                 </Grid>
               </Grid>
@@ -499,22 +595,23 @@ const Assignments = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {mockSubmissions
+                      {submissions
                         .filter(
-                          (sub) => sub.assignmentId === selectedAssignment.id,
+                          (sub) =>
+                            sub.assignmentId?._id === selectedAssignment._id,
                         )
                         .map((submission) => {
-                          const student = mockStudents.find(
-                            (s) => s.id === submission.studentId,
+                          const student = students.find(
+                            (s) => s._id === submission.studentId?._id,
                           );
                           return (
-                            <TableRow key={submission.id}>
+                            <TableRow key={submission._id}>
                               <TableCell>
                                 {student?.name || "Unknown"}
                               </TableCell>
                               <TableCell>
                                 {new Date(
-                                  submission.submittedDate,
+                                  submission.submissionDate,
                                 ).toLocaleDateString()}
                               </TableCell>
                               <TableCell sx={{ textTransform: "capitalize" }}>
@@ -555,7 +652,7 @@ const Assignments = () => {
         <DialogActions>
           <Button onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
           <Button
-            onClick={() => handleDeleteAssignment(selectedAssignment?.id)}
+            onClick={() => handleDeleteAssignment(selectedAssignment?._id)}
             color="error"
           >
             Delete
@@ -587,9 +684,9 @@ const Assignments = () => {
                   label="Student"
                 >
                   {getStudentsWhoCanSubmit(
-                    selectedAssignmentForSubmission.id,
+                    selectedAssignmentForSubmission._id,
                   ).map((student) => (
-                    <MenuItem key={student.id} value={student.id}>
+                    <MenuItem key={student._id} value={student._id}>
                       {student.name}
                     </MenuItem>
                   ))}

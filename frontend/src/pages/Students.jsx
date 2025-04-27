@@ -1,6 +1,7 @@
+// src/pages/Students.jsx
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Plus, MoreVertical, Eye, Edit, Trash2 } from "lucide-react";
+import { Plus, MoreVertical, Eye, Trash2 } from "lucide-react";
 import { DataGrid } from "@mui/x-data-grid";
 import {
   Box,
@@ -22,22 +23,46 @@ import {
   DialogActions,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
+import { useToast } from "@/context/ToastContext"; // Import the ToastContext
+
+// Import Redux actions and selectors
 import {
-  selectStudents,
-  setSelectedStudent,
+  fetchStudents,
+  addStudent,
+  updateStudent,
   deleteStudent,
+  selectStudents,
+  selectSelectedStudent,
+  selectLoading,
+  selectError,
+  fetchStudentById,
 } from "@/store/slices/studentsSlice";
+import { fetchCourses, selectCourses } from "../store/slices/coursesSlice";
+import {
+  fetchSubmissions,
+  selectSubmissions,
+} from "../store/slices/submissionSlice";
+import { fetchGrades, selectGrades } from "../store/slices/gradesSlice";
+
+// Import form components (assumed to exist)
 import AddStudentForm from "@/components/forms/AddStudentForm";
 import EditStudentForm from "@/components/forms/EditStudentForm";
-import { mockCourses } from "@/data/mockData";
-import { toast } from "sonner";
 
 const Students = () => {
   const theme = useTheme();
   const dispatch = useDispatch();
-  const students = useSelector(selectStudents);
+  const { showToast } = useToast(); // Use the ToastContext
 
-  const [loading, setLoading] = useState(true);
+  // Selectors
+  const students = useSelector(selectStudents);
+  const courses = useSelector(selectCourses);
+  const submissions = useSelector(selectSubmissions);
+  const grades = useSelector(selectGrades);
+  const loading = useSelector(selectLoading);
+  const error = useSelector(selectError);
+  const selectedStudent = useSelector(selectSelectedStudent);
+
+  // State
   const [search, setSearch] = useState("");
   const [menuAnchor, setMenuAnchor] = useState(null);
   const [menuRow, setMenuRow] = useState(null);
@@ -45,28 +70,63 @@ const Students = () => {
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
 
-  // simulate load
+  // Fetch data on mount
   useEffect(() => {
-    setTimeout(() => setLoading(false), 600);
-  }, []);
+    dispatch(fetchStudents());
+    dispatch(fetchCourses());
+    dispatch(fetchSubmissions());
+    dispatch(fetchGrades());
+  }, [dispatch]);
 
-  const handleMenuOpen = (event, row) => {
-    setMenuAnchor(event.currentTarget);
-    setMenuRow(row);
-    dispatch(setSelectedStudent(row));
+  useEffect(() => {
+    console.log("Courses Array:", courses); // Debugging
+  }, [courses]);
+
+  // Handle error toasts
+  useEffect(() => {
+    if (error) {
+      showToast(error, "error");
+    }
+  }, [error, showToast]);
+
+  const handleMenuClose = () => {
+    setMenuAnchor(null);
+    setMenuRow(null);
   };
-  const handleMenuClose = () => setMenuAnchor(null);
 
   const handleDelete = () => {
-    dispatch(deleteStudent(menuRow.id));
-    toast.success("Student deleted");
-    setOpenDelete(false);
-    handleMenuClose();
+    dispatch(deleteStudent(menuRow._id))
+      .unwrap()
+      .then(() => {
+        showToast("Student deleted successfully", "success");
+        setOpenDelete(false);
+        handleMenuClose();
+      })
+      .catch((err) => {
+        showToast(err.message || "Failed to delete student", "error");
+      });
   };
-  const getCourseCodes = (ids = []) =>
-    ids
-      .map((id) => mockCourses.find((c) => c.id === id)?.code || "?")
+
+  const getCourseCodes = (coursesArr = []) => {
+    if (!coursesArr.length) return "No courses assigned";
+    if (typeof coursesArr[0] === "object" && coursesArr[0] !== null) {
+      return coursesArr.map((c) => c.title || "Unknown Course").join(", ");
+    }
+    return coursesArr
+      .map((id) => courses.find((c) => c._id === id)?.title || "Unknown Course")
       .join(", ");
+  };
+
+  const getStudentSubmissions = (studentId) =>
+    submissions.filter((sub) => sub.studentId === studentId).length;
+
+  const getStudentGrade = (studentId) => {
+    const studentGrades = grades.filter((g) => g.studentId === studentId);
+    if (!studentGrades.length) return 0;
+    const average =
+      studentGrades.reduce((sum, g) => sum + g.score, 0) / studentGrades.length;
+    return Math.round(average);
+  };
 
   const columns = [
     { field: "name", headerName: "Name", flex: 1 },
@@ -75,20 +135,40 @@ const Students = () => {
       field: "attendance",
       headerName: "Attendance",
       flex: 0.5,
-      valueFormatter: ({ value }) => `${value}%`,
+      renderCell: ({ row }) =>
+        row.attendance != null ? `${row.attendance}%` : "N/A",
     },
-    { field: "submissions", headerName: "Submissions", flex: 0.5 },
+    {
+      field: "submissions",
+      headerName: "Submissions",
+      flex: 0.5,
+      renderCell: ({ row }) =>
+        row.submissions != null ? row.submissions : "N/A",
+    },
     {
       field: "grade",
       headerName: "Grade",
       flex: 0.5,
-      valueFormatter: ({ value }) => `${value}%`,
+      renderCell: ({ row }) => (row.grade != null ? `${row.grade}%` : "N/A"),
     },
     {
       field: "courses",
       headerName: "Courses",
       flex: 1,
-      valueGetter: ({ row }) => getCourseCodes(row?.courses || []),
+      renderCell: ({ row }) => {
+        const value = row.courses;
+        if (!Array.isArray(value) || !value.length)
+          return "No courses assigned";
+        if (typeof value[0] === "object" && value[0] !== null) {
+          return value.map((c) => c.title || "Unknown Course").join(", ");
+        }
+        return value
+          .map(
+            (id) =>
+              courses.find((c) => c._id === id)?.title || "Unknown Course",
+          )
+          .join(", ");
+      },
     },
     {
       field: "actions",
@@ -96,15 +176,32 @@ const Students = () => {
       flex: 0.5,
       sortable: false,
       renderCell: ({ row }) => (
-        <IconButton size="small" onClick={(e) => handleMenuOpen(e, row)}>
-          <MoreVertical size={16} />
-        </IconButton>
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <IconButton
+            color="primary"
+            onClick={() => {
+              setOpenEdit(true);
+              dispatch(fetchStudentById(row._id));
+            }}
+          >
+            <Eye size={20} />
+          </IconButton>
+          <IconButton
+            color="error"
+            onClick={() => {
+              setMenuRow(row);
+              setOpenDelete(true);
+            }}
+          >
+            <Trash2 size={20} />
+          </IconButton>
+        </Box>
       ),
     },
   ];
 
   let content;
-  if (loading) {
+  if (loading || !courses.length || !students.length) {
     content = (
       <Box>
         {[...Array(5)].map((_, i) => (
@@ -112,18 +209,18 @@ const Students = () => {
         ))}
       </Box>
     );
-  } else if (!students.length) {
-    content = (
-      <Box textAlign="center" py={8}>
-        <Typography color="text.disabled">No students found</Typography>
-      </Box>
-    );
   } else {
-    const rows = students.filter(
-      (s) =>
-        s.name.toLowerCase().includes(search.toLowerCase()) ||
-        s.email.toLowerCase().includes(search.toLowerCase()),
-    );
+    const rows = students
+      .filter(
+        (s) =>
+          s.name.toLowerCase().includes(search.toLowerCase()) ||
+          s.email.toLowerCase().includes(search.toLowerCase()),
+      )
+      .map((s) => ({
+        ...s,
+        id: s._id,
+      }));
+    console.log("Rows for DataGrid:", rows); // Debugging
     content = (
       <div style={{ height: 500, width: "100%" }}>
         <DataGrid
@@ -132,12 +229,10 @@ const Students = () => {
           pageSize={10}
           rowsPerPageOptions={[10]}
           disableSelectionOnClick
-          getRowId={(row) => row.id}
         />
       </div>
     );
   }
-
   return (
     <Container
       maxWidth="lg"
@@ -168,29 +263,6 @@ const Students = () => {
         </CardContent>
       </Card>
 
-      <Menu
-        anchorEl={menuAnchor}
-        open={Boolean(menuAnchor)}
-        onClose={handleMenuClose}
-      >
-        <MenuItem
-          onClick={() => {
-            setOpenEdit(true);
-            handleMenuClose();
-          }}
-        >
-          <Eye size={14} /> View/Edit
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            setOpenDelete(true);
-            handleMenuClose();
-          }}
-        >
-          <Trash2 size={14} /> Delete
-        </MenuItem>
-      </Menu>
-
       {/* Add dialog */}
       <Dialog
         open={openAdd}
@@ -200,7 +272,20 @@ const Students = () => {
       >
         <DialogTitle>Add Student</DialogTitle>
         <DialogContent>
-          <AddStudentForm onClose={() => setOpenAdd(false)} />
+          <AddStudentForm
+            onClose={() => setOpenAdd(false)}
+            onSubmit={(studentData) =>
+              dispatch(addStudent(studentData))
+                .unwrap()
+                .then(() => {
+                  showToast("Student added successfully", "success");
+                  setOpenAdd(false);
+                })
+                .catch((err) =>
+                  showToast(err.message || "Failed to add student", "error"),
+                )
+            }
+          />
         </DialogContent>
       </Dialog>
 
@@ -213,7 +298,30 @@ const Students = () => {
       >
         <DialogTitle>Edit Student</DialogTitle>
         <DialogContent>
-          <EditStudentForm onClose={() => setOpenEdit(false)} />
+          {selectedStudent ? (
+            <EditStudentForm
+              student={selectedStudent}
+              onClose={() => setOpenEdit(false)}
+              onSubmit={(studentData) =>
+                dispatch(
+                  updateStudent({ id: selectedStudent._id, studentData }),
+                )
+                  .unwrap()
+                  .then(() => {
+                    showToast("Student updated successfully", "success");
+                    setOpenEdit(false);
+                  })
+                  .catch((err) =>
+                    showToast(
+                      err.message || "Failed to update student",
+                      "error",
+                    ),
+                  )
+              }
+            />
+          ) : (
+            <Typography>Loading student data...</Typography>
+          )}
         </DialogContent>
       </Dialog>
 

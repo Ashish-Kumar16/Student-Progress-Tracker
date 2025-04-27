@@ -25,14 +25,13 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { format } from "date-fns";
 import { mockAttendance, mockStudents, mockCourses } from "@/data/mockData";
-import { toast } from "sonner";
-// import { useDispatch } from "react-redux";
+import { useToast } from "@/context/ToastContext"; // Import useToast from ToastContext
 
 const Attendance = () => {
-  // const dispatch = useDispatch();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedCourse, setSelectedCourse] = useState("");
   const [attendanceStatus, setAttendanceStatus] = useState({});
+  const { showToast } = useToast(); // Use the toast context
 
   // Initialize attendance status from mock data when date or course changes
   const updateAttendanceStatus = useCallback(() => {
@@ -81,7 +80,7 @@ const Attendance = () => {
       course: selectedCourse,
       attendanceStatus,
     });
-    toast.success("Attendance saved successfully!");
+    showToast("Attendance saved successfully!", "success"); // Use showToast
   };
 
   // Get students for the selected course

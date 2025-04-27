@@ -70,10 +70,11 @@ const Dashboard = () => {
 
   return (
     <Container
-      maxWidth="lg"
+      maxWidth={false} // Remove max-width constraint for full viewport width
       sx={{
         mt: 4,
         mb: 4,
+        px: { xs: 2, sm: 3, md: 4 }, // Responsive padding
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -108,11 +109,11 @@ const Dashboard = () => {
             label: "Courses",
             value: totalCourses,
             subtitle: "Active courses",
-            color: theme.palette.secondary.main,
+            color: theme.palette.primary.main,
           },
         ].map((card, idx) => (
           <Grid item xs={12} sm={6} md={3} key={idx}>
-            <Card sx={{ borderRadius: 2, boxShadow: 1 }}>
+            <Card sx={{ borderRadius: 2, boxShadow: 1, width: "100%" }}>
               <CardContent>
                 <Typography variant="subtitle2" color="textSecondary">
                   {card.label}
@@ -137,11 +138,17 @@ const Dashboard = () => {
       </Grid>
 
       {/* Charts */}
-      <Grid container spacing={3} sx={{ justifyContent: "center" }}>
-        <Grid item xs={12}>
-          <Card sx={{ height: "100%", borderRadius: 2, boxShadow: 1 }}>
+      <Grid
+        container
+        spacing={3}
+        sx={{ justifyContent: "center", width: "100%" }}
+      >
+        <Grid item xs={12} sm={12} md={12} lg={12}>
+          {" "}
+          {/* Full width for all screens */}
+          <Card sx={{ borderRadius: 2, boxShadow: 1, width: "500px" }}>
             <CardHeader title="Student Performance" />
-            <CardContent sx={{ height: 400 }}>
+            <CardContent sx={{ height: 400, width: "100%" }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
                   data={perfData}
@@ -158,12 +165,15 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12}>
-          <Card sx={{ height: "100%", borderRadius: 2, boxShadow: 1 }}>
+        <Grid item xs={12} sm={12} md={12} lg={12}>
+          {" "}
+          {/* Full width for all screens */}
+          <Card sx={{ borderRadius: 2, boxShadow: 1, minWidth: "500px" }}>
             <CardHeader title="Submission Status" />
             <CardContent
               sx={{
                 height: 400,
+                width: "100%",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",

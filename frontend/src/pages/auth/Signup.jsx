@@ -8,17 +8,21 @@ import {
   Typography,
   CircularProgress,
 } from "@mui/material";
-import { toast } from "sonner";
+import { useDispatch, useSelector } from "react-redux";
+import { signup, selectLoading } from "../../store/slices/authSlice";
+import { useToast } from "@/context/ToastContext"; // Import useToast
 
 const Signup = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const isLoading = useSelector(selectLoading);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
-    confirmPassword: "",
   });
-  const [isLoading, setIsLoading] = useState(false);
+
+  const { showToast } = useToast(); // Use the toast context
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -28,26 +32,24 @@ const Signup = () => {
     });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords don't match");
+  const handleSubmit = async () => {
+    if (!formData.name || !formData.email || !formData.password) {
+      showToast("Please fill in all fields", "error"); // Use showToast for errors
       return;
     }
 
-    setIsLoading(true);
-
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      toast.success("Account created successfully!");
-      navigate("/login");
-    } catch {
-      toast.error("Registration failed. Please try again.");
-    } finally {
-      setIsLoading(false);
+      await dispatch(
+        signup({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        }),
+      ).unwrap();
+      showToast("Signed up successfully!", "success"); // Use showToast for success
+      navigate("/");
+    } catch (error) {
+      showToast(error?.message || "Failed to sign up", "error"); // Use showToast for errors
     }
   };
 
@@ -72,12 +74,12 @@ const Signup = () => {
             color="textSecondary"
             gutterBottom
           >
-            Create an account
+            Create a new account
           </Typography>
 
-          <form onSubmit={handleSubmit} style={{ marginTop: "20px" }}>
+          <div style={{ marginTop: "20px" }}>
             <TextField
-              label="Full Name"
+              label="Name"
               name="name"
               type="text"
               fullWidth
@@ -106,18 +108,8 @@ const Signup = () => {
               onChange={handleInputChange}
               margin="normal"
             />
-            <TextField
-              label="Confirm Password"
-              name="confirmPassword"
-              type="password"
-              fullWidth
-              required
-              value={formData.confirmPassword}
-              onChange={handleInputChange}
-              margin="normal"
-            />
             <Button
-              type="submit"
+              onClick={handleSubmit}
               variant="contained"
               color="primary"
               fullWidth
@@ -130,7 +122,7 @@ const Signup = () => {
                 "Sign up"
               )}
             </Button>
-          </form>
+          </div>
 
           <Typography
             variant="body2"

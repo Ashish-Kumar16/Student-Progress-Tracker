@@ -29,7 +29,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { Download, FileType } from "lucide-react";
 import { mockStudents, mockCourses } from "@/data/mockData";
-import { toast } from "sonner";
+import { useToast } from "@/context/ToastContext"; // Import useToast
 
 const Reports = () => {
   const dispatch = useDispatch();
@@ -38,6 +38,8 @@ const Reports = () => {
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState("all");
   const [reportType, setReportType] = useState("attendance");
+
+  const { showToast } = useToast(); // Use the toast context
 
   const handleGenerateReport = (format) => {
     console.log("Generating report:", {
@@ -48,7 +50,10 @@ const Reports = () => {
       selectedCourse,
       format,
     });
-    toast.success(`${format.toUpperCase()} report generated successfully!`);
+    showToast(
+      `${format.toUpperCase()} report generated successfully!`,
+      "success",
+    ); // Use showToast
   };
 
   const filteredStudents =
