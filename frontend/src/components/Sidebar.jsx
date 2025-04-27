@@ -98,7 +98,10 @@ const AppSidebar = () => {
                 <ListItemIcon>
                   <Icon size={20} />
                 </ListItemIcon>
-                <ListItemText primary={item.title} />
+                <ListItemText
+                  primary={item.title}
+                  primaryTypographyProps={{ sx: { color: "#000" } }}
+                />
               </ListItem>
             </Tooltip>
           );
