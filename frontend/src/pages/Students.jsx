@@ -202,10 +202,27 @@ const Students = () => {
 
   let content;
   if (loading || !courses.length || !students.length) {
+    // Show a skeleton grid similar to DataGrid columns
     content = (
       <Box>
-        {[...Array(5)].map((_, i) => (
-          <Skeleton key={i} height={40} sx={{ mb: 1 }} />
+        {[...Array(8)].map((_, rowIdx) => (
+          <Box
+            key={rowIdx}
+            sx={{
+              display: "flex",
+              gap: 2,
+              mb: 1,
+              alignItems: "center",
+            }}
+          >
+            <Skeleton variant="rectangular" width={120} height={32} />
+            <Skeleton variant="rectangular" width={180} height={32} />
+            <Skeleton variant="rectangular" width={80} height={32} />
+            <Skeleton variant="rectangular" width={80} height={32} />
+            <Skeleton variant="rectangular" width={80} height={32} />
+            <Skeleton variant="rectangular" width={160} height={32} />
+            <Skeleton variant="circular" width={32} height={32} />
+          </Box>
         ))}
       </Box>
     );

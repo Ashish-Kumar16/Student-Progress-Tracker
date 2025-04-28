@@ -23,6 +23,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Skeleton,
+  TextField,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -38,22 +40,20 @@ const Reports = () => {
   const [selectedStudents, setSelectedStudents] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState("all");
   const [reportType, setReportType] = useState("attendance");
+  const [loading, setLoading] = useState(false); // Add loading state
 
   const { showToast } = useToast(); // Use the toast context
 
+  // Example: set loading to true when generating report (simulate async)
   const handleGenerateReport = (format) => {
-    console.log("Generating report:", {
-      reportType,
-      startDate,
-      endDate,
-      selectedStudents,
-      selectedCourse,
-      format,
-    });
-    showToast(
-      `${format.toUpperCase()} report generated successfully!`,
-      "success",
-    ); // Use showToast
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      showToast(
+        `${format.toUpperCase()} report generated successfully!`,
+        "success",
+      ); // Use showToast
+    }, 1200);
   };
 
   const filteredStudents =
@@ -77,111 +77,146 @@ const Reports = () => {
               <Typography variant="h6" gutterBottom>
                 Report Parameters
               </Typography>
-
-              <Box sx={{ mb: 3 }}>
-                <Tabs
-                  value={reportType}
-                  onChange={handleTabChange}
-                  variant="fullWidth"
-                >
-                  <Tab label="Attendance" value="attendance" />
-                  <Tab label="Grades" value="grades" />
-                  <Tab label="Progress" value="progress" />
-                </Tabs>
-              </Box>
-
-              <Box sx={{ mb: 3 }}>
-                <Typography variant="subtitle1" gutterBottom>
-                  Date Range
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={6}>
-                    <LocalizationProvider dateAdapter={AdapterDateFns}>
-                      <DatePicker
-                        label="Start Date"
-                        value={startDate}
-                        onChange={setStartDate}
-                        renderInput={(params) => (
-                          <TextField {...params} fullWidth />
-                        )}
-                      />
-                    </LocalizationProvider>
+              {loading ? (
+                <Box>
+                  <Skeleton
+                    variant="rectangular"
+                    width="100%"
+                    height={40}
+                    sx={{ mb: 3 }}
+                  />
+                  <Skeleton
+                    variant="rectangular"
+                    width="100%"
+                    height={56}
+                    sx={{ mb: 2 }}
+                  />
+                  <Skeleton
+                    variant="rectangular"
+                    width="100%"
+                    height={56}
+                    sx={{ mb: 2 }}
+                  />
+                  <Skeleton
+                    variant="rectangular"
+                    width="100%"
+                    height={56}
+                    sx={{ mb: 2 }}
+                  />
+                  <Skeleton
+                    variant="rectangular"
+                    width="100%"
+                    height={40}
+                    sx={{ mb: 2 }}
+                  />
+                  <Skeleton variant="rectangular" width="100%" height={40} />
+                </Box>
+              ) : (
+                <>
+                  <Box sx={{ mb: 3 }}>
+                    <Tabs
+                      value={reportType}
+                      onChange={handleTabChange}
+                      variant="fullWidth"
+                    >
+                      <Tab label="Attendance" value="attendance" />
+                      <Tab label="Grades" value="grades" />
+                      <Tab label="Progress" value="progress" />
+                    </Tabs>
+                  </Box>
+                  <Box sx={{ mb: 3 }}>
+                    <Typography variant="subtitle1" gutterBottom>
+                      Date Range
+                    </Typography>
+                    <Grid container spacing={2}>
+                      <Grid item xs={6}>
+                        <LocalizationProvider dateAdapter={AdapterDateFns}>
+                          <DatePicker
+                            label="Start Date"
+                            value={startDate}
+                            onChange={setStartDate}
+                            renderInput={(params) => (
+                              <TextField {...params} fullWidth />
+                            )}
+                          />
+                        </LocalizationProvider>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <LocalizationProvider dateAdapter={AdapterDateFns}>
+                          <DatePicker
+                            label="End Date"
+                            value={endDate}
+                            onChange={setEndDate}
+                            renderInput={(params) => (
+                              <TextField {...params} fullWidth />
+                            )}
+                          />
+                        </LocalizationProvider>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                  <Box sx={{ mb: 3 }}>
+                    <FormControl fullWidth sx={{ mb: 2 }}>
+                      <InputLabel id="course-select-label">Course</InputLabel>
+                      <Select
+                        labelId="course-select-label"
+                        value={selectedCourse}
+                        label="Course"
+                        onChange={(e) => setSelectedCourse(e.target.value)}
+                      >
+                        <MenuItem value="all">All Courses</MenuItem>
+                        {mockCourses.map((course) => (
+                          <MenuItem key={course.id} value={course.id}>
+                            {course.name} ({course.code})
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                    <FormControl fullWidth>
+                      <InputLabel id="student-select-label">
+                        Students
+                      </InputLabel>
+                      <Select
+                        labelId="student-select-label"
+                        value={selectedStudents[0] || "all"}
+                        label="Students"
+                        onChange={(e) => setSelectedStudents([e.target.value])}
+                      >
+                        <MenuItem value="all">All Students</MenuItem>
+                        {filteredStudents.map((student) => (
+                          <MenuItem key={student.id} value={student.id}>
+                            {student.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Box>
+                  <Grid container spacing={2}>
+                    <Grid item xs={6}>
+                      <Button
+                        variant="contained"
+                        fullWidth
+                        startIcon={<FileType size={16} />}
+                        onClick={() => handleGenerateReport("pdf")}
+                        disabled={!startDate || !endDate}
+                      >
+                        PDF
+                      </Button>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Button
+                        variant="outlined"
+                        fullWidth
+                        startIcon={<Download size={16} />}
+                        onClick={() => handleGenerateReport("csv")}
+                        disabled={!startDate || !endDate}
+                      >
+                        CSV
+                      </Button>
+                    </Grid>
                   </Grid>
-                  <Grid item xs={6}>
-                    <LocalizationProvider dateAdapter={AdapterDateFns}>
-                      <DatePicker
-                        label="End Date"
-                        value={endDate}
-                        onChange={setEndDate}
-                        renderInput={(params) => (
-                          <TextField {...params} fullWidth />
-                        )}
-                      />
-                    </LocalizationProvider>
-                  </Grid>
-                </Grid>
-              </Box>
-
-              <Box sx={{ mb: 3 }}>
-                <FormControl fullWidth sx={{ mb: 2 }}>
-                  <InputLabel id="course-select-label">Course</InputLabel>
-                  <Select
-                    labelId="course-select-label"
-                    value={selectedCourse}
-                    label="Course"
-                    onChange={(e) => setSelectedCourse(e.target.value)}
-                  >
-                    <MenuItem value="all">All Courses</MenuItem>
-                    {mockCourses.map((course) => (
-                      <MenuItem key={course.id} value={course.id}>
-                        {course.name} ({course.code})
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-
-                <FormControl fullWidth>
-                  <InputLabel id="student-select-label">Students</InputLabel>
-                  <Select
-                    labelId="student-select-label"
-                    value={selectedStudents[0] || "all"}
-                    label="Students"
-                    onChange={(e) => setSelectedStudents([e.target.value])}
-                  >
-                    <MenuItem value="all">All Students</MenuItem>
-                    {filteredStudents.map((student) => (
-                      <MenuItem key={student.id} value={student.id}>
-                        {student.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Box>
-
-              <Grid container spacing={2}>
-                <Grid item xs={6}>
-                  <Button
-                    variant="contained"
-                    fullWidth
-                    startIcon={<FileType size={16} />}
-                    onClick={() => handleGenerateReport("pdf")}
-                    disabled={!startDate || !endDate}
-                  >
-                    PDF
-                  </Button>
-                </Grid>
-                <Grid item xs={6}>
-                  <Button
-                    variant="outlined"
-                    fullWidth
-                    startIcon={<Download size={16} />}
-                    onClick={() => handleGenerateReport("csv")}
-                    disabled={!startDate || !endDate}
-                  >
-                    CSV
-                  </Button>
-                </Grid>
-              </Grid>
+                </>
+              )}
             </CardContent>
           </Card>
         </Grid>
@@ -193,88 +228,118 @@ const Reports = () => {
               <Typography variant="h6" gutterBottom>
                 Report Preview
               </Typography>
-
               <Box sx={{ mt: 2 }}>
-                {reportType === "attendance" && (
-                  <TableContainer component={Paper}>
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Student</TableCell>
-                          <TableCell>Present</TableCell>
-                          <TableCell>Absent</TableCell>
-                          <TableCell>Late</TableCell>
-                          <TableCell>Rate</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {filteredStudents.slice(0, 4).map((s) => (
-                          <TableRow key={s.id} hover>
-                            <TableCell>{s.name}</TableCell>
-                            <TableCell>15</TableCell>
-                            <TableCell>2</TableCell>
-                            <TableCell>1</TableCell>
-                            <TableCell>{s.attendance}%</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
+                {loading ? (
+                  <Box>
+                    <Skeleton
+                      variant="rectangular"
+                      width="100%"
+                      height={40}
+                      sx={{ mb: 2 }}
+                    />
+                    <Skeleton
+                      variant="rectangular"
+                      width="100%"
+                      height={40}
+                      sx={{ mb: 2 }}
+                    />
+                    <Skeleton
+                      variant="rectangular"
+                      width="100%"
+                      height={40}
+                      sx={{ mb: 2 }}
+                    />
+                    <Skeleton
+                      variant="rectangular"
+                      width="100%"
+                      height={40}
+                      sx={{ mb: 2 }}
+                    />
+                  </Box>
+                ) : (
+                  <>
+                    {reportType === "attendance" && (
+                      <TableContainer component={Paper}>
+                        <Table size="small">
+                          <TableHead>
+                            <TableRow>
+                              <TableCell>Student</TableCell>
+                              <TableCell>Present</TableCell>
+                              <TableCell>Absent</TableCell>
+                              <TableCell>Late</TableCell>
+                              <TableCell>Rate</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {filteredStudents.slice(0, 4).map((s) => (
+                              <TableRow key={s.id} hover>
+                                <TableCell>{s.name}</TableCell>
+                                <TableCell>15</TableCell>
+                                <TableCell>2</TableCell>
+                                <TableCell>1</TableCell>
+                                <TableCell>{s.attendance}%</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    )}
+                    {reportType === "grades" && (
+                      <TableContainer component={Paper}>
+                        <Table size="small">
+                          <TableHead>
+                            <TableRow>
+                              <TableCell>Student</TableCell>
+                              <TableCell>Assignments</TableCell>
+                              <TableCell>Avg. Grade</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {filteredStudents.slice(0, 4).map((s) => (
+                              <TableRow key={s.id} hover>
+                                <TableCell>{s.name}</TableCell>
+                                <TableCell>{s.submissions} completed</TableCell>
+                                <TableCell>{s.grade}%</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    )}
+                    {reportType === "progress" && (
+                      <TableContainer component={Paper}>
+                        <Table size="small">
+                          <TableHead>
+                            <TableRow>
+                              <TableCell>Student</TableCell>
+                              <TableCell>Attendance</TableCell>
+                              <TableCell>Submissions</TableCell>
+                              <TableCell>Grade</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {filteredStudents.slice(0, 4).map((s) => (
+                              <TableRow key={s.id} hover>
+                                <TableCell>{s.name}</TableCell>
+                                <TableCell>{s.attendance}%</TableCell>
+                                <TableCell>{s.submissions}</TableCell>
+                                <TableCell>{s.grade}%</TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    )}
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      align="center"
+                      sx={{ mt: 2 }}
+                    >
+                      Preview only. Generate report for complete data.
+                    </Typography>
+                  </>
                 )}
-                {reportType === "grades" && (
-                  <TableContainer component={Paper}>
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Student</TableCell>
-                          <TableCell>Assignments</TableCell>
-                          <TableCell>Avg. Grade</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {filteredStudents.slice(0, 4).map((s) => (
-                          <TableRow key={s.id} hover>
-                            <TableCell>{s.name}</TableCell>
-                            <TableCell>{s.submissions} completed</TableCell>
-                            <TableCell>{s.grade}%</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                )}
-                {reportType === "progress" && (
-                  <TableContainer component={Paper}>
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Student</TableCell>
-                          <TableCell>Attendance</TableCell>
-                          <TableCell>Submissions</TableCell>
-                          <TableCell>Grade</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {filteredStudents.slice(0, 4).map((s) => (
-                          <TableRow key={s.id} hover>
-                            <TableCell>{s.name}</TableCell>
-                            <TableCell>{s.attendance}%</TableCell>
-                            <TableCell>{s.submissions}</TableCell>
-                            <TableCell>{s.grade}%</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                )}
-                <Typography
-                  variant="body2"
-                  color="text.secondary"
-                  align="center"
-                  sx={{ mt: 2 }}
-                >
-                  Preview only. Generate report for complete data.
-                </Typography>
               </Box>
             </CardContent>
           </Card>

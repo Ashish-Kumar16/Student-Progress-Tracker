@@ -40,6 +40,7 @@ import {
   TableHead,
   TableRow,
   InputAdornment,
+  Skeleton,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import { useDispatch, useSelector } from "react-redux";
@@ -329,78 +330,135 @@ const Assignments = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={6} align="center">
-                        Loading...
-                      </TableCell>
-                    </TableRow>
-                  ) : filteredAssignments.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} align="center">
-                        No assignments found
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredAssignments.map((assignment) => {
-                      const assignmentSubmissions = submissions.filter(
-                        (s) => s.assignmentId?._id === assignment._id,
-                      );
-                      const submissionCount = assignmentSubmissions.length;
-                      const studentsInCourse = students.filter((s) =>
-                        s.courses.some(
-                          (course) => course._id === assignment.courseId?._id,
-                        ),
-                      ).length;
+                  {loading
+                    ? // Skeleton rows for Assignments tab
+                      activeTab === "assignments"
+                      ? [...Array(5)].map((_, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell>
+                              <Skeleton variant="text" width={120} />
+                            </TableCell>
+                            <TableCell>
+                              <Skeleton variant="text" width={120} />
+                            </TableCell>
+                            <TableCell>
+                              <Skeleton variant="text" width={100} />
+                            </TableCell>
+                            <TableCell>
+                              <Skeleton variant="text" width={80} />
+                            </TableCell>
+                            <TableCell>
+                              <Skeleton
+                                variant="rectangular"
+                                width={80}
+                                height={32}
+                              />
+                            </TableCell>
+                            <TableCell align="right">
+                              <Skeleton
+                                variant="rectangular"
+                                width={120}
+                                height={32}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      : // Skeleton rows for Submissions tab
+                        [...Array(5)].map((_, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell>
+                              <Skeleton variant="text" width={120} />
+                            </TableCell>
+                            <TableCell>
+                              <Skeleton variant="text" width={120} />
+                            </TableCell>
+                            <TableCell>
+                              <Skeleton variant="text" width={120} />
+                            </TableCell>
+                            <TableCell>
+                              <Skeleton variant="text" width={100} />
+                            </TableCell>
+                            <TableCell>
+                              <Skeleton
+                                variant="rectangular"
+                                width={80}
+                                height={32}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Skeleton variant="text" width={80} />
+                            </TableCell>
+                            <TableCell align="right">
+                              <Skeleton
+                                variant="rectangular"
+                                width={120}
+                                height={32}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))
+                    : filteredAssignments.map((assignment) => {
+                        const assignmentSubmissions = submissions.filter(
+                          (s) => s.assignmentId?._id === assignment._id,
+                        );
+                        const submissionCount = assignmentSubmissions.length;
+                        const studentsInCourse = students.filter((s) =>
+                          s.courses.some(
+                            (course) => course._id === assignment.courseId?._id,
+                          ),
+                        ).length;
 
-                      return (
-                        <TableRow key={assignment._id}>
-                          <TableCell>{assignment.title}</TableCell>
-                          <TableCell>
-                            {assignment.courseId?.title || "Unknown"}
-                          </TableCell>
-                          <TableCell>
-                            {new Date(assignment.dueDate).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>{assignment.totalPoints}</TableCell>
-                          <TableCell>
-                            <Chip
-                              label={`${submissionCount} / ${studentsInCourse}`}
-                              variant="outlined"
-                            />
-                          </TableCell>
-                          <TableCell align="right">
-                            <IconButton
-                              color="primary"
-                              onClick={() => {
-                                setSelectedAssignment(assignment);
-                                setIsViewDialogOpen(true);
-                              }}
-                            >
-                              <Eye size={20} />
-                            </IconButton>
-                            <IconButton
-                              color="primary"
-                              onClick={() => {
-                                toast.info("Edit functionality would go here"); // Use react-toastify
-                              }}
-                            >
-                              <Edit size={20} />
-                            </IconButton>
-                            <IconButton
-                              color="error"
-                              onClick={() => {
-                                setSelectedAssignment(assignment);
-                                setIsDeleteDialogOpen(true);
-                              }}
-                            >
-                              <Trash2 size={20} />
-                            </IconButton>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
+                        return (
+                          <TableRow key={assignment._id}>
+                            <TableCell>{assignment.title}</TableCell>
+                            <TableCell>
+                              {assignment.courseId?.title || "Unknown"}
+                            </TableCell>
+                            <TableCell>
+                              {new Date(
+                                assignment.dueDate,
+                              ).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>{assignment.totalPoints}</TableCell>
+                            <TableCell>
+                              <Chip
+                                label={`${submissionCount} / ${studentsInCourse}`}
+                                variant="outlined"
+                              />
+                            </TableCell>
+                            <TableCell align="right">
+                              <IconButton
+                                color="primary"
+                                onClick={() => {
+                                  setSelectedAssignment(assignment);
+                                  setIsViewDialogOpen(true);
+                                }}
+                              >
+                                <Eye size={20} />
+                              </IconButton>
+                              <IconButton
+                                color="primary"
+                                onClick={() => {
+                                  toast.info(
+                                    "Edit functionality would go here",
+                                  ); // Use react-toastify
+                                }}
+                              >
+                                <Edit size={20} />
+                              </IconButton>
+                              <IconButton
+                                color="error"
+                                onClick={() => {
+                                  setSelectedAssignment(assignment);
+                                  setIsDeleteDialogOpen(true);
+                                }}
+                              >
+                                <Trash2 size={20} />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                 </TableBody>
               </Table>
             </TableContainer>
@@ -421,84 +479,141 @@ const Assignments = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={7} align="center">
-                        Loading...
-                      </TableCell>
-                    </TableRow>
-                  ) : filteredSubmissions.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} align="center">
-                        No submissions found
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredSubmissions.map((submission) => {
-                      const student = students.find(
-                        (s) => s._id === submission.studentId?._id,
-                      );
-                      const assignment = assignments.find(
-                        (a) => a._id === submission.assignmentId?._id,
-                      );
-                      const course = assignment?.courseId;
+                  {loading
+                    ? // Skeleton rows for Assignments tab
+                      activeTab === "assignments"
+                      ? [...Array(5)].map((_, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell>
+                              <Skeleton variant="text" width={120} />
+                            </TableCell>
+                            <TableCell>
+                              <Skeleton variant="text" width={120} />
+                            </TableCell>
+                            <TableCell>
+                              <Skeleton variant="text" width={100} />
+                            </TableCell>
+                            <TableCell>
+                              <Skeleton variant="text" width={80} />
+                            </TableCell>
+                            <TableCell>
+                              <Skeleton
+                                variant="rectangular"
+                                width={80}
+                                height={32}
+                              />
+                            </TableCell>
+                            <TableCell align="right">
+                              <Skeleton
+                                variant="rectangular"
+                                width={120}
+                                height={32}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      : // Skeleton rows for Submissions tab
+                        [...Array(5)].map((_, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell>
+                              <Skeleton variant="text" width={120} />
+                            </TableCell>
+                            <TableCell>
+                              <Skeleton variant="text" width={120} />
+                            </TableCell>
+                            <TableCell>
+                              <Skeleton variant="text" width={120} />
+                            </TableCell>
+                            <TableCell>
+                              <Skeleton variant="text" width={100} />
+                            </TableCell>
+                            <TableCell>
+                              <Skeleton
+                                variant="rectangular"
+                                width={80}
+                                height={32}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Skeleton variant="text" width={80} />
+                            </TableCell>
+                            <TableCell align="right">
+                              <Skeleton
+                                variant="rectangular"
+                                width={120}
+                                height={32}
+                              />
+                            </TableCell>
+                          </TableRow>
+                        ))
+                    : filteredSubmissions.map((submission) => {
+                        const student = students.find(
+                          (s) => s._id === submission.studentId?._id,
+                        );
+                        const assignment = assignments.find(
+                          (a) => a._id === submission.assignmentId?._id,
+                        );
+                        const course = assignment?.courseId;
 
-                      return (
-                        <TableRow key={submission._id}>
-                          <TableCell>{student?.name || "Unknown"}</TableCell>
-                          <TableCell>
-                            {assignment?.title || "Unknown"}
-                          </TableCell>
-                          <TableCell>{course?.title || "Unknown"}</TableCell>
-                          <TableCell>
-                            {new Date(
-                              submission.submissionDate,
-                            ).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 1,
-                              }}
-                            >
-                              {getStatusIcon(submission.status)}
-                              <Typography sx={{ textTransform: "capitalize" }}>
-                                {submission.status}
-                              </Typography>
-                            </Box>
-                          </TableCell>
-                          <TableCell>
-                            {submission.grade !== null
-                              ? `${submission.grade}/${
-                                  assignment?.totalPoints || 100
-                                }`
-                              : "Not graded"}
-                          </TableCell>
-                          <TableCell align="right">
-                            <IconButton
-                              color="primary"
-                              onClick={() => setSelectedSubmission(submission)}
-                            >
-                              <Eye size={20} />
-                            </IconButton>
-                            {submission.status !== "graded" && (
-                              <Button
-                                size="small"
-                                variant="contained"
-                                onClick={() => {
-                                  toast.info("Grade dialog would open here"); // Use react-toastify
+                        return (
+                          <TableRow key={submission._id}>
+                            <TableCell>{student?.name || "Unknown"}</TableCell>
+                            <TableCell>
+                              {assignment?.title || "Unknown"}
+                            </TableCell>
+                            <TableCell>{course?.title || "Unknown"}</TableCell>
+                            <TableCell>
+                              {new Date(
+                                submission.submissionDate,
+                              ).toLocaleDateString()}
+                            </TableCell>
+                            <TableCell>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 1,
                                 }}
                               >
-                                Grade
-                              </Button>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
+                                {getStatusIcon(submission.status)}
+                                <Typography
+                                  sx={{ textTransform: "capitalize" }}
+                                >
+                                  {submission.status}
+                                </Typography>
+                              </Box>
+                            </TableCell>
+                            <TableCell>
+                              {submission.grade !== null
+                                ? `${submission.grade}/${
+                                    assignment?.totalPoints || 100
+                                  }`
+                                : "Not graded"}
+                            </TableCell>
+                            <TableCell align="right">
+                              <IconButton
+                                color="primary"
+                                onClick={() =>
+                                  setSelectedSubmission(submission)
+                                }
+                              >
+                                <Eye size={20} />
+                              </IconButton>
+                              {submission.status !== "graded" && (
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  onClick={() => {
+                                    toast.info("Grade dialog would open here"); // Use react-toastify
+                                  }}
+                                >
+                                  Grade
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                 </TableBody>
               </Table>
             </TableContainer>

@@ -27,6 +27,7 @@ import {
   DialogActions,
   Box,
   Typography,
+  Skeleton,
 } from "@mui/material";
 import AddCourseForm from "../components/forms/AddCourseForm";
 import EditCourseForm from "../components/forms/EditCourseForm";
@@ -140,57 +141,81 @@ const Courses = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredCourses.map((course) => (
-                <TableRow key={course._id}>
-                  <TableCell sx={{ fontWeight: "medium" }}>
-                    {course.title}
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      maxWidth: 200,
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {course.description}
-                  </TableCell>
-                  <TableCell>{course.credits}</TableCell>
-                  <TableCell>{course.instructor}</TableCell>
-                  <TableCell align="right">
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      startIcon={<Eye size={16} />}
-                      onClick={() => openViewDialog(course._id)}
-                      sx={{ mr: 1 }}
-                      disabled={loading}
-                    >
-                      View
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      startIcon={<Edit size={16} />}
-                      onClick={() => openEditDialog(course._id)}
-                      sx={{ mr: 1 }}
-                      disabled={loading}
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="contained"
-                      color="error"
-                      size="small"
-                      startIcon={<Trash2 size={16} />}
-                      onClick={() => openDeleteDialog(course)}
-                      disabled={loading}
-                    >
-                      Delete
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {loading
+                ? [...Array(5)].map((_, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell>
+                        <Skeleton variant="text" width={120} />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton variant="text" width={200} />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton variant="text" width={60} />
+                      </TableCell>
+                      <TableCell>
+                        <Skeleton variant="text" width={120} />
+                      </TableCell>
+                      <TableCell align="right">
+                        <Skeleton
+                          variant="rectangular"
+                          width={180}
+                          height={36}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                : filteredCourses.map((course) => (
+                    <TableRow key={course._id}>
+                      <TableCell sx={{ fontWeight: "medium" }}>
+                        {course.title}
+                      </TableCell>
+                      <TableCell
+                        sx={{
+                          maxWidth: 200,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {course.description}
+                      </TableCell>
+                      <TableCell>{course.credits}</TableCell>
+                      <TableCell>{course.instructor}</TableCell>
+                      <TableCell align="right">
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          startIcon={<Eye size={16} />}
+                          onClick={() => openViewDialog(course._id)}
+                          sx={{ mr: 1 }}
+                          disabled={loading}
+                        >
+                          View
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          startIcon={<Edit size={16} />}
+                          onClick={() => openEditDialog(course._id)}
+                          sx={{ mr: 1 }}
+                          disabled={loading}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          variant="contained"
+                          color="error"
+                          size="small"
+                          startIcon={<Trash2 size={16} />}
+                          onClick={() => openDeleteDialog(course)}
+                          disabled={loading}
+                        >
+                          Delete
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
             </TableBody>
           </Table>
         </TableContainer>

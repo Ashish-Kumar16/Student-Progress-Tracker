@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { useState, useEffect, useCallback } from "react";
 import {
   Box,
@@ -19,6 +20,7 @@ import {
   Select,
   MenuItem,
   Chip,
+  Skeleton,
 } from "@mui/material";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
@@ -31,7 +33,8 @@ const Attendance = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedCourse, setSelectedCourse] = useState("");
   const [attendanceStatus, setAttendanceStatus] = useState({});
-  const { showToast } = useToast(); // Use the toast context
+  const [loading, setLoading] = useState(false); // Add loading state
+  const { showToast } = useToast();
 
   // Initialize attendance status from mock data when date or course changes
   const updateAttendanceStatus = useCallback(() => {
@@ -170,69 +173,94 @@ const Attendance = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {courseStudents.map((student) => (
-                    <TableRow key={student.id}>
-                      <TableCell>{student.name}</TableCell>
-                      <TableCell>{student.email}</TableCell>
-                      <TableCell>
-                        {attendanceStatus[student.id] === "present" && (
-                          <Chip label="Present" color="success" />
-                        )}
-                        {attendanceStatus[student.id] === "absent" && (
-                          <Chip label="Absent" color="error" />
-                        )}
-                        {attendanceStatus[student.id] === "late" && (
-                          <Chip label="Late" color="warning" />
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: "flex", gap: 1 }}>
-                          <Button
-                            size="small"
-                            variant={
-                              attendanceStatus[student.id] === "present"
-                                ? "contained"
-                                : "outlined"
-                            }
-                            color="success"
-                            onClick={() =>
-                              handleStatusChange(student.id, "present")
-                            }
-                          >
-                            Present
-                          </Button>
-                          <Button
-                            size="small"
-                            variant={
-                              attendanceStatus[student.id] === "late"
-                                ? "contained"
-                                : "outlined"
-                            }
-                            color="warning"
-                            onClick={() =>
-                              handleStatusChange(student.id, "late")
-                            }
-                          >
-                            Late
-                          </Button>
-                          <Button
-                            size="small"
-                            variant={
-                              attendanceStatus[student.id] === "absent"
-                                ? "contained"
-                                : "outlined"
-                            }
-                            color="error"
-                            onClick={() =>
-                              handleStatusChange(student.id, "absent")
-                            }
-                          >
-                            Absent
-                          </Button>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {loading
+                    ? [...Array(5)].map((_, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell>
+                            <Skeleton variant="text" width={120} />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton variant="text" width={180} />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton
+                              variant="rectangular"
+                              width={80}
+                              height={32}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Skeleton
+                              variant="rectangular"
+                              width={200}
+                              height={36}
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    : courseStudents.map((student) => (
+                        <TableRow key={student.id}>
+                          <TableCell>{student.name}</TableCell>
+                          <TableCell>{student.email}</TableCell>
+                          <TableCell>
+                            {attendanceStatus[student.id] === "present" && (
+                              <Chip label="Present" color="success" />
+                            )}
+                            {attendanceStatus[student.id] === "absent" && (
+                              <Chip label="Absent" color="error" />
+                            )}
+                            {attendanceStatus[student.id] === "late" && (
+                              <Chip label="Late" color="warning" />
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <Box sx={{ display: "flex", gap: 1 }}>
+                              <Button
+                                size="small"
+                                variant={
+                                  attendanceStatus[student.id] === "present"
+                                    ? "contained"
+                                    : "outlined"
+                                }
+                                color="success"
+                                onClick={() =>
+                                  handleStatusChange(student.id, "present")
+                                }
+                              >
+                                Present
+                              </Button>
+                              <Button
+                                size="small"
+                                variant={
+                                  attendanceStatus[student.id] === "late"
+                                    ? "contained"
+                                    : "outlined"
+                                }
+                                color="warning"
+                                onClick={() =>
+                                  handleStatusChange(student.id, "late")
+                                }
+                              >
+                                Late
+                              </Button>
+                              <Button
+                                size="small"
+                                variant={
+                                  attendanceStatus[student.id] === "absent"
+                                    ? "contained"
+                                    : "outlined"
+                                }
+                                color="error"
+                                onClick={() =>
+                                  handleStatusChange(student.id, "absent")
+                                }
+                              >
+                                Absent
+                              </Button>
+                            </Box>
+                          </TableCell>
+                        </TableRow>
+                      ))}
                 </TableBody>
               </Table>
             </TableContainer>

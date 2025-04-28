@@ -34,6 +34,7 @@ const queryClient = new QueryClient();
 const drawerWidth = 240;
 
 const App = () => {
+  
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const isLoggedIn = useSelector(selectIsLoggedIn);

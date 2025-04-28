@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
@@ -37,6 +38,7 @@ import {
   DialogActions,
   Paper,
   useMediaQuery,
+  Skeleton,
 } from "@mui/material";
 import { Edit, Delete, Add, Assignment } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
@@ -236,11 +238,29 @@ const Grades = () => {
           </TableHead>
           <TableBody>
             {loading ? (
-              <TableRow>
-                <TableCell colSpan={6} align="center">
-                  Loading...
-                </TableCell>
-              </TableRow>
+              // Show skeleton rows while loading
+              [...Array(5)].map((_, idx) => (
+                <TableRow key={idx}>
+                  <TableCell>
+                    <Skeleton variant="text" width={120} />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton variant="text" width={120} />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton variant="text" width={120} />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton variant="text" width={60} />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton variant="text" width={100} />
+                  </TableCell>
+                  <TableCell align="right">
+                    <Skeleton variant="rectangular" width={140} height={32} />
+                  </TableCell>
+                </TableRow>
+              ))
             ) : Array.isArray(grades) && grades.length > 0 ? (
               grades.map((grade) => {
                 // Find the corresponding submission for this grade

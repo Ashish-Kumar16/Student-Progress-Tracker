@@ -12,6 +12,7 @@ import {
   TextField,
   Tabs,
   Tab,
+  Skeleton,
 } from "@mui/material";
 import { useDispatch, useSelector } from "react-redux";
 import { useToast } from "../context/ToastContext";
@@ -113,7 +114,64 @@ const Settings = () => {
   };
 
   if (loading) {
-    return <Typography>Loading...</Typography>;
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
+        <Typography variant="h4" component="h1" gutterBottom>
+          Settings
+        </Typography>
+        <Box sx={{ width: "100%", mb: 3 }}>
+          <Tabs
+            value={activeTab}
+            onChange={handleTabChange}
+            textColor="primary"
+            indicatorColor="primary"
+          >
+            <Tab value="profile" label="Profile" />
+            <Tab value="security" label="Security" />
+            <Tab value="notifications" label="Notifications" />
+          </Tabs>
+        </Box>
+        <Skeleton
+          variant="rectangular"
+          width={300}
+          height={40}
+          sx={{ mb: 2 }}
+        />
+        <Card>
+          <CardContent>
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <Skeleton
+                  variant="rectangular"
+                  width="100%"
+                  height={56}
+                  sx={{ mb: 2 }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <Skeleton
+                  variant="rectangular"
+                  width="100%"
+                  height={56}
+                  sx={{ mb: 2 }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <Skeleton
+                  variant="rectangular"
+                  width="100%"
+                  height={56}
+                  sx={{ mb: 2 }}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <Skeleton variant="rectangular" width={160} height={40} />
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+      </Container>
+    );
   }
 
   if (error) {
