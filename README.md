@@ -1,6 +1,6 @@
-# Course Compass
+# Student Progress Tracker
 
-Course Compass is a full-stack student progress tracking application. It provides a modern, responsive interface for managing students, courses, assignments, grades, attendance, and reports.
+Student Progress Tracker is a full-stack student progress tracking application. It provides a modern, responsive interface for managing students, courses, assignments, grades, attendance, and reports.
 
 ---
 
